@@ -4826,6 +4826,43 @@ function buildGodSettings() {
 
   body.innerHTML = '';
 
+  // ── SECTION: DAILY CHALLENGE ──────────────────────────────────
+  body.appendChild(gsSection('🎯 DAILY CHALLENGE'));
+
+  const { ch, prog, done, key } = getDailyProgress();
+  if (done) {
+    const doneRow = gsRowEl('TODAY\'S CHALLENGE', ch.desc);
+    const badge = document.createElement('span');
+    badge.style.cssText = 'font-family:Orbitron,monospace;font-size:10px;color:var(--green);letter-spacing:1px;';
+    badge.textContent = '✅ ALREADY COMPLETED';
+    doneRow.querySelector('.gs-controls').appendChild(badge);
+    body.appendChild(doneRow);
+  } else {
+    body.appendChild(gsRow('TODAY\'S CHALLENGE', ch.icon + ' ' + ch.desc, [
+      gsAddBtn('COMPLETE NOW', 'green', () => {
+        if (!PLAYER.dailyProgress) PLAYER.dailyProgress = {};
+        PLAYER.dailyProgress[key] = ch.goal;
+        PLAYER.shards = (PLAYER.shards||0) + ch.reward;
+        PLAYER.dailyCompleted = (PLAYER.dailyCompleted||0) + 1;
+        savePlayer();
+        toast('🎯 DAILY COMPLETE! +' + ch.reward + ' 💎');
+        updateShardDisplays();
+        updateXPBar();
+        addXP(ch.reward * 2);
+        checkAchievements();
+        refreshDailyBar();
+        buildGodSettings();
+      }),
+    ]));
+    // Show current progress
+    const progRow = gsRowEl('PROGRESS', `${prog} / ${ch.goal}`);
+    const progBadge = document.createElement('span');
+    progBadge.style.cssText = 'font-family:Orbitron,monospace;font-size:11px;font-weight:900;color:var(--gold);';
+    progBadge.textContent = `${prog} / ${ch.goal}`;
+    progRow.querySelector('.gs-controls').appendChild(progBadge);
+    body.appendChild(progRow);
+  }
+
   // ── SECTION: CURRENCIES ──────────────────────────────────────
   body.appendChild(gsSection('💰 CURRENCIES'));
 
