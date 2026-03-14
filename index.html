@@ -820,6 +820,135 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 @keyframes kpShake {
   0%,100%{transform:translateX(0)} 20%{transform:translateX(-10px)} 40%{transform:translateX(10px)} 60%{transform:translateX(-8px)} 80%{transform:translateX(8px)}
 }
+/* ═══════════════════════════════════════════════
+   GOD MODE SETTINGS PANEL
+═══════════════════════════════════════════════ */
+#god-settings {
+  position: fixed; inset: 0; z-index: 800;
+  display: none; align-items: center; justify-content: center;
+  background: rgba(0,0,0,.82); backdrop-filter: blur(6px);
+}
+#god-settings.open { display: flex; }
+#god-settings-box {
+  background: linear-gradient(160deg, #0a0c1e 0%, #06080f 100%);
+  border: 1px solid rgba(255,200,0,.45);
+  border-radius: 16px;
+  box-shadow: 0 0 60px rgba(255,180,0,.2), inset 0 0 40px rgba(255,180,0,.03);
+  width: min(520px, 96vw);
+  max-height: 88vh;
+  overflow-y: auto;
+  display: flex; flex-direction: column;
+}
+#god-settings-box::-webkit-scrollbar { width: 4px; }
+#god-settings-box::-webkit-scrollbar-thumb { background: rgba(255,200,0,.3); border-radius: 2px; }
+.gs-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 16px 20px 12px;
+  border-bottom: 1px solid rgba(255,200,0,.2);
+  position: sticky; top: 0; background: #0a0c1e; z-index: 1;
+  border-radius: 16px 16px 0 0;
+}
+.gs-title {
+  font-family: 'Orbitron', monospace; font-size: 13px; font-weight: 900;
+  letter-spacing: 4px; color: #ffe066;
+  text-shadow: 0 0 18px rgba(255,200,0,.6);
+}
+.gs-close {
+  background: rgba(255,45,85,.12); border: 1px solid rgba(255,45,85,.35);
+  color: var(--red); border-radius: 8px; padding: 5px 12px;
+  font-family: 'Orbitron', monospace; font-size: 10px; cursor: pointer;
+  transition: var(--trans);
+}
+.gs-close:hover { background: rgba(255,45,85,.25); }
+.gs-body { padding: 16px 20px 20px; display: flex; flex-direction: column; gap: 18px; }
+.gs-section-title {
+  font-family: 'Orbitron', monospace; font-size: 8px; letter-spacing: 4px;
+  color: rgba(255,200,0,.55); margin-bottom: 8px; display: flex; align-items: center; gap: 8px;
+}
+.gs-section-title::after { content:''; flex:1; height:1px; background:linear-gradient(90deg,rgba(255,200,0,.25),transparent); }
+.gs-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 10px; padding: 6px 0;
+  border-bottom: 1px solid rgba(255,255,255,.04);
+}
+.gs-row:last-child { border-bottom: none; }
+.gs-lbl {
+  font-family: 'Orbitron', monospace; font-size: 9px; letter-spacing: 1px;
+  color: var(--text2); flex-shrink: 0;
+}
+.gs-lbl small { display:block; font-size:8px; color:var(--text3); font-weight:400; letter-spacing:.5px; margin-top:1px; font-family:'Rajdhani',sans-serif; }
+.gs-controls { display: flex; gap: 5px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+/* Quick-add buttons */
+.gs-add {
+  padding: 5px 9px; border-radius: 6px; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  border: 1px solid rgba(245,200,66,.35); background: rgba(245,200,66,.08);
+  color: var(--gold); transition: var(--trans); white-space: nowrap;
+}
+.gs-add:hover { background: rgba(245,200,66,.18); box-shadow: 0 0 10px rgba(245,200,66,.2); }
+.gs-add.red   { border-color: rgba(255,45,85,.35);  background: rgba(255,45,85,.08);  color: var(--red); }
+.gs-add.red:hover   { background: rgba(255,45,85,.18); }
+.gs-add.cyan  { border-color: rgba(0,232,255,.35);  background: rgba(0,232,255,.08);  color: var(--cyan); }
+.gs-add.cyan:hover  { background: rgba(0,232,255,.18); }
+.gs-add.green { border-color: rgba(57,255,160,.35); background: rgba(57,255,160,.08); color: var(--green); }
+.gs-add.green:hover { background: rgba(57,255,160,.18); }
+.gs-add.purple{ border-color: rgba(201,62,255,.35); background: rgba(201,62,255,.08); color: var(--purple); }
+.gs-add.purple:hover{ background: rgba(201,62,255,.18); }
+/* Number input */
+.gs-input {
+  background: rgba(255,255,255,.06); border: 1px solid var(--border2);
+  color: var(--text); font-family: 'Orbitron', monospace; font-size: 11px;
+  font-weight: 700; border-radius: 6px; padding: 5px 8px;
+  width: 90px; text-align: right; outline: none; transition: var(--trans);
+}
+.gs-input:focus { border-color: var(--gold); box-shadow: 0 0 8px rgba(245,200,66,.2); }
+/* Set button */
+.gs-set {
+  padding: 5px 10px; border-radius: 6px; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-size: 9px; font-weight: 700;
+  border: 1px solid rgba(57,255,160,.4); background: rgba(57,255,160,.08);
+  color: var(--green); transition: var(--trans);
+}
+.gs-set:hover { background: rgba(57,255,160,.18); }
+/* Toggle switch */
+.gs-toggle {
+  position: relative; width: 38px; height: 20px; flex-shrink: 0;
+}
+.gs-toggle input { opacity: 0; width: 0; height: 0; }
+.gs-toggle-track {
+  position: absolute; inset: 0; border-radius: 20px;
+  background: var(--border2); cursor: pointer; transition: .25s;
+  border: 1px solid var(--border3);
+}
+.gs-toggle input:checked + .gs-toggle-track { background: rgba(57,255,160,.35); border-color: var(--green); }
+.gs-toggle-track::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--text3); transition: .25s;
+}
+.gs-toggle input:checked + .gs-toggle-track::after { transform: translateX(18px); background: var(--green); box-shadow: 0 0 6px rgba(57,255,160,.6); }
+/* Slider */
+.gs-slider { width: 100px; accent-color: var(--gold); cursor: pointer; }
+.gs-val-badge {
+  font-family: 'Orbitron', monospace; font-size: 10px; font-weight: 900;
+  color: var(--gold); min-width: 28px; text-align: right;
+}
+/* Wave picker */
+.gs-wave-btns { display: flex; gap: 4px; flex-wrap: wrap; justify-content: flex-end; }
+.gs-wave-btn {
+  padding: 4px 7px; border-radius: 5px; cursor: pointer;
+  font-family: 'Orbitron', monospace; font-size: 8px; font-weight: 700;
+  border: 1px solid var(--border2); background: var(--bg2); color: var(--text2);
+  transition: var(--trans);
+}
+.gs-wave-btn:hover { border-color: var(--cyan); color: var(--cyan); }
+/* God mode disabled overlay */
+.gs-locked-msg {
+  text-align: center; padding: 20px;
+  font-family: 'Orbitron', monospace; font-size: 10px; letter-spacing: 2px;
+  color: var(--text3);
+}
+
 /* Hide XP bar + daily challenge during gameplay — not needed there */
 body:has(#screen-game.active) #prog-bar-wrap { display: none; }
 /* Make overlays scrollable on small screens */
@@ -1182,10 +1311,24 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
 </div>
 
 <!-- GOD MODE indicator (floats at top-center, visible everywhere) -->
-<div id="god-indicator">
+<div id="god-indicator" onclick="openGodSettings()" style="cursor:pointer">
   <span class="god-icon">⚡</span>
-  <span class="god-text">GOD MODE ACTIVE</span>
+  <span class="god-text">GOD MODE</span>
+  <span style="font-family:monospace;font-size:9px;letter-spacing:2px;color:rgba(255,224,102,.6);margin-left:2px">⚙ SETTINGS</span>
   <span class="god-icon">⚡</span>
+</div>
+
+<!-- GOD SETTINGS PANEL -->
+<div id="god-settings">
+  <div id="god-settings-box">
+    <div class="gs-header">
+      <div class="gs-title">⚡ GOD SETTINGS</div>
+      <button class="gs-close" onclick="closeGodSettings()">✕ CLOSE</button>
+    </div>
+    <div class="gs-body" id="gs-body">
+      <!-- filled by buildGodSettings() -->
+    </div>
+  </div>
 </div>
 
 <!-- Mobile God Mode keypad -->
@@ -4659,6 +4802,323 @@ function updateGodIndicator() {
   const el = document.getElementById('god-indicator');
   if (el) el.classList.toggle('show', godModeActive);
 }
+
+// ═══════════════════════════════════════════════════════════════
+// GOD SETTINGS PANEL
+// ═══════════════════════════════════════════════════════════════
+function openGodSettings() {
+  if (!godModeActive) return;
+  buildGodSettings();
+  document.getElementById('god-settings').classList.add('open');
+}
+function closeGodSettings() {
+  document.getElementById('god-settings').classList.remove('open');
+}
+
+function buildGodSettings() {
+  const body = document.getElementById('gs-body');
+  const inGame = document.getElementById('screen-game')?.classList.contains('active');
+
+  body.innerHTML = '';
+
+  // ── SECTION: CURRENCIES ──────────────────────────────────────
+  body.appendChild(gsSection('💰 CURRENCIES'));
+
+  // Cash (in-game only)
+  if (inGame) {
+    body.appendChild(gsRow('CASH', 'In-game currency', [
+      gsAddBtn('+$500',   () => { G.cash += 500;    updateHUD(); gsFlash('cash'); toast('💰 +$500'); }),
+      gsAddBtn('+$2000',  () => { G.cash += 2000;   updateHUD(); gsFlash('cash'); toast('💰 +$2000'); }),
+      gsAddBtn('+$10K',   () => { G.cash += 10000;  updateHUD(); gsFlash('cash'); toast('💰 +$10,000'); }),
+      gsAddBtn('MAX',     () => { G.cash += 999999; updateHUD(); gsFlash('cash'); toast('💰 MAX CASH'); }),
+    ]));
+
+    // Custom cash input
+    body.appendChild(gsRow('SET CASH', 'Set exact amount', [
+      gsNumberInput('gs-cash-val', G.cash),
+      gsSetBtn(() => {
+        const v = parseInt(document.getElementById('gs-cash-val').value);
+        if (!isNaN(v) && v >= 0) { G.cash = v; updateHUD(); toast(`💰 Cash set to $${v}`); }
+      }),
+    ]));
+
+    // Lives
+    body.appendChild(gsRow('LIVES', 'Current / max lives', [
+      gsAddBtn('+1',  'green', () => { G.lives = Math.min(G.lives+1, G.maxLives); updateHUD(); toast('❤️ +1 Life'); }),
+      gsAddBtn('+5',  'green', () => { G.lives = Math.min(G.lives+5, G.maxLives); updateHUD(); toast('❤️ +5 Lives'); }),
+      gsAddBtn('FULL','green', () => { G.lives = G.maxLives; updateHUD(); toast('❤️ Lives full!'); }),
+    ]));
+
+    // Max lives
+    body.appendChild(gsRow('MAX LIVES', 'Increase the cap', [
+      gsAddBtn('+5',   'green', () => { G.maxLives += 5;   G.lives = Math.min(G.lives, G.maxLives); updateHUD(); toast('❤️ Max lives +5'); }),
+      gsAddBtn('+20',  'green', () => { G.maxLives += 20;  G.lives = Math.min(G.lives, G.maxLives); updateHUD(); toast('❤️ Max lives +20'); }),
+      gsAddBtn('999',  'green', () => { G.maxLives = 999; G.lives = 999; updateHUD(); toast('❤️ Immortal!'); }),
+    ]));
+  }
+
+  // Shards (always available)
+  body.appendChild(gsRow('SHARDS 💎', 'Gacha currency', [
+    gsAddBtn('+100',  'cyan', () => { PLAYER.shards += 100;  savePlayer(); updateShardDisplays(); toast('💎 +100 Shards'); }),
+    gsAddBtn('+500',  'cyan', () => { PLAYER.shards += 500;  savePlayer(); updateShardDisplays(); toast('💎 +500 Shards'); }),
+    gsAddBtn('+5000', 'cyan', () => { PLAYER.shards += 5000; savePlayer(); updateShardDisplays(); toast('💎 +5000 Shards'); }),
+    gsAddBtn('MAX',   'cyan', () => { PLAYER.shards += 99999; savePlayer(); updateShardDisplays(); toast('💎 MAX SHARDS'); }),
+  ]));
+
+  // Custom shards input
+  body.appendChild(gsRow('SET SHARDS', 'Set exact amount', [
+    gsNumberInput('gs-shard-val', PLAYER.shards),
+    gsSetBtn(() => {
+      const v = parseInt(document.getElementById('gs-shard-val').value);
+      if (!isNaN(v) && v >= 0) { PLAYER.shards = v; savePlayer(); updateShardDisplays(); toast(`💎 Shards set to ${v}`); }
+    }),
+  ]));
+
+  // ── SECTION: PLAYER PROGRESSION ──────────────────────────────
+  body.appendChild(gsSection('⭐ PLAYER PROGRESSION'));
+
+  // XP / Level
+  body.appendChild(gsRow('XP BOOST', 'Add experience points', [
+    gsAddBtn('+500 XP',  'purple', () => { addXP(500);   toast('⭐ +500 XP'); }),
+    gsAddBtn('+5000 XP', 'purple', () => { addXP(5000);  toast('⭐ +5000 XP'); }),
+    gsAddBtn('LEVEL UP', 'purple', () => { addXP(xpForNext(PLAYER.level||1) - (PLAYER.xp||0) + 1); toast('⭐ Level Up!'); }),
+  ]));
+
+  // Set level directly
+  body.appendChild(gsRow('SET LEVEL', 'Teleport to level', [
+    gsNumberInput('gs-lvl-val', PLAYER.level||1),
+    gsSetBtn(() => {
+      const v = parseInt(document.getElementById('gs-lvl-val').value);
+      if (!isNaN(v) && v >= 1 && v <= 100) {
+        PLAYER.level = v;
+        PLAYER.xp = xpForLevel(v);
+        savePlayer(); updateXPBar();
+        toast(`⭐ Level set to ${v}`);
+      }
+    }),
+  ]));
+
+  // Streak
+  body.appendChild(gsRow('WIN STREAK', 'Set current streak', [
+    gsAddBtn('+3',  'purple', () => { PLAYER.streak = (PLAYER.streak||0)+3; PLAYER.bestStreak = Math.max(PLAYER.bestStreak||0, PLAYER.streak); savePlayer(); updateXPBar(); toast('🔥 Streak +3'); }),
+    gsAddBtn('MAX', 'purple', () => { PLAYER.streak = 99; PLAYER.bestStreak = 99; savePlayer(); updateXPBar(); toast('🔥 MAX STREAK'); }),
+  ]));
+
+  // ── SECTION: IN-GAME TWEAKS (only when in game) ───────────────
+  if (inGame) {
+    body.appendChild(gsSection('🎮 IN-GAME TWEAKS'));
+
+    // Speed
+    const speedRow = gsRowEl('GAME SPEED', '1× / 2× / 3×');
+    const speedBtns = ['1×','2×','3×'].map((lbl, i) => {
+      const b = document.createElement('button');
+      b.className = 'gs-wave-btn';
+      b.textContent = lbl;
+      b.onclick = () => { G.speed = i+1; document.getElementById('btn-speed').textContent = `⏩ ${G.speed}×`; toast(`Speed: ${G.speed}×`); };
+      return b;
+    });
+    const speedWrap = document.createElement('div'); speedWrap.className = 'gs-wave-btns';
+    speedBtns.forEach(b => speedWrap.appendChild(b));
+    speedRow.querySelector('.gs-controls').appendChild(speedWrap);
+    body.appendChild(speedRow);
+
+    // Skip to wave
+    body.appendChild(gsRow('SKIP TO WAVE', 'Jump forward (ends current wave)', [
+      gsAddBtn('+5 waves',  () => { gsSkipWaves(5);  toast(`⏭ Skipped 5 waves`); }),
+      gsAddBtn('+10 waves', () => { gsSkipWaves(10); toast(`⏭ Skipped 10 waves`); }),
+      gsNumberInput('gs-wave-val', G.wave + 1),
+      gsSetBtn(() => {
+        const v = parseInt(document.getElementById('gs-wave-val').value);
+        if (!isNaN(v) && v > G.wave && v <= G.totalWaves) { gsSkipWaves(v - G.wave); toast(`⏭ Jumped to wave ${v}`); }
+      }),
+    ]));
+
+    // Kill all enemies
+    body.appendChild(gsRow('ENEMIES', 'Instant clear or freeze', [
+      gsAddBtn('KILL ALL', 'red', () => {
+        G.enemies.forEach(e => { if (!e.dead) applyDmg(e, 999999, null); });
+        toast('💀 All enemies killed');
+      }),
+      gsAddBtn('FREEZE ALL', 'cyan', () => {
+        G.enemies.forEach(e => { if (!e.dead) { e.frozen=true; e.frozenT=30; e.spd=0; } });
+        toast('❄️ All frozen 30s');
+      }),
+      gsAddBtn('CLEAR', () => {
+        G.enemies = []; G.spawnQ = [];
+        toast('✅ Enemies cleared');
+      }),
+    ]));
+
+    // Abilities
+    body.appendChild(gsRow('ABILITIES', 'Reset all uses & cooldowns', [
+      gsAddBtn('RESET ALL', 'cyan', () => {
+        G.abilities.forEach(ab => { ab.uses = ab.maxUses; ab.cd = 0; });
+        buildAbilitiesPanel(); updateHUD();
+        toast('✨ Abilities reset!');
+      }),
+      gsAddBtn('+99 USES', 'cyan', () => {
+        G.abilities.forEach(ab => { ab.uses = 99; ab.maxUses = 99; ab.cd = 0; });
+        buildAbilitiesPanel(); updateHUD();
+        toast('✨ 99 uses each!');
+      }),
+    ]));
+
+    // Damage multiplier toggle
+    body.appendChild(gsRow('ONE-HIT MODE', 'All towers deal 999× damage', [
+      gsToggle('gs-onehit', G._oneHitMode||false, (on) => {
+        G._oneHitMode = on;
+        if (on) toast('💥 One-hit mode ON');
+        else toast('💥 One-hit mode OFF');
+      }),
+    ]));
+
+    // Score
+    body.appendChild(gsRow('SCORE', 'Add to current score', [
+      gsAddBtn('+10K',  () => { G.score += 10000;  updateHUD(); toast('+10,000 score'); }),
+      gsAddBtn('+100K', () => { G.score += 100000; updateHUD(); toast('+100,000 score'); }),
+    ]));
+  }
+
+  // ── SECTION: ACCOUNT ACTIONS ──────────────────────────────────
+  body.appendChild(gsSection('🛠️ ACCOUNT ACTIONS'));
+
+  // Unlock all achievements
+  body.appendChild(gsRow('ACHIEVEMENTS', 'Unlock everything', [
+    gsAddBtn('UNLOCK ALL', 'purple', () => {
+      ACHIEVEMENTS.forEach(a => {
+        if (!PLAYER.achievements?.includes(a.id)) {
+          if (!PLAYER.achievements) PLAYER.achievements = [];
+          PLAYER.achievements.push(a.id);
+          PLAYER.shards = (PLAYER.shards||0) + a.reward;
+        }
+      });
+      savePlayer(); updateShardDisplays(); refreshAchievementsTab();
+      toast('🏆 All achievements unlocked!');
+    }),
+  ]));
+
+  // Collection — add all items
+  body.appendChild(gsRow('COLLECTION', 'Get every relic/skin/augment', [
+    gsAddBtn('GET ALL', 'purple', () => {
+      GACHA_POOL.forEach(item => {
+        if (!PLAYER.collection[item.id]) PLAYER.collection[item.id] = { count: 0, equipped: false };
+        PLAYER.collection[item.id].count = Math.max(PLAYER.collection[item.id].count, 3);
+      });
+      savePlayer(); refreshCollTab();
+      toast('🎲 Full collection unlocked!');
+    }),
+    gsAddBtn('CLEAR', 'red', () => {
+      PLAYER.collection = {}; savePlayer(); refreshCollTab();
+      toast('🗑 Collection cleared');
+    }),
+  ]));
+
+  // Win count
+  body.appendChild(gsRow('WIN COUNT', 'Add wins to stats', [
+    gsAddBtn('+10 wins', 'green', () => { PLAYER.totalWins = (PLAYER.totalWins||0)+10; savePlayer(); updateXPBar(); toast('+10 wins'); }),
+    gsAddBtn('+1 nightmare','green', () => { PLAYER.nightmareWins = (PLAYER.nightmareWins||0)+1; savePlayer(); toast('+1 nightmare win'); }),
+    gsAddBtn('+1 perfect', 'green', () => { PLAYER.perfectWins = (PLAYER.perfectWins||0)+1; savePlayer(); toast('+1 perfect win'); }),
+  ]));
+
+  // Kill count
+  body.appendChild(gsRow('KILL COUNT', 'Add to total kills', [
+    gsAddBtn('+1000', () => { PLAYER.totalKills = (PLAYER.totalKills||0)+1000; savePlayer(); checkAchievements(); toast('+1000 kills'); }),
+    gsAddBtn('+10K',  () => { PLAYER.totalKills = (PLAYER.totalKills||0)+10000; savePlayer(); checkAchievements(); toast('+10,000 kills'); }),
+  ]));
+
+  // Reset all data
+  body.appendChild(gsRow('DANGER ZONE', 'Wipe all saved data', [
+    gsAddBtn('RESET SAVE', 'red', () => {
+      if (confirm('⚠️ This will delete ALL save data. Are you sure?')) {
+        localStorage.removeItem('ws_player');
+        localStorage.removeItem('ws_godmode');
+        location.reload();
+      }
+    }),
+  ]));
+}
+
+// ── Helper builders ─────────────────────────────────────────────
+
+function gsSection(label) {
+  const d = document.createElement('div');
+  d.innerHTML = `<div class="gs-section-title">${label}</div>`;
+  return d;
+}
+
+function gsRowEl(lbl, sub='') {
+  const d = document.createElement('div');
+  d.className = 'gs-row';
+  d.innerHTML = `<div class="gs-lbl">${lbl}${sub?`<small>${sub}</small>`:''}</div><div class="gs-controls"></div>`;
+  return d;
+}
+
+function gsRow(lbl, sub, controls) {
+  const d = gsRowEl(lbl, sub);
+  const ctrl = d.querySelector('.gs-controls');
+  controls.forEach(c => { if (c) ctrl.appendChild(c); });
+  return d;
+}
+
+function gsAddBtn(label, colorOrCb, cb) {
+  const color = (typeof colorOrCb === 'string' && typeof cb === 'function') ? colorOrCb : '';
+  const fn    = (typeof colorOrCb === 'function') ? colorOrCb : cb;
+  const b = document.createElement('button');
+  b.className = 'gs-add' + (color ? ' '+color : '');
+  b.textContent = label;
+  b.onclick = () => { fn(); buildGodSettings(); };
+  return b;
+}
+
+function gsSetBtn(fn) {
+  const b = document.createElement('button');
+  b.className = 'gs-set'; b.textContent = 'SET';
+  b.onclick = () => { fn(); buildGodSettings(); };
+  return b;
+}
+
+function gsNumberInput(id, val) {
+  const inp = document.createElement('input');
+  inp.type = 'number'; inp.className = 'gs-input';
+  inp.id = id; inp.value = Math.floor(val||0);
+  inp.min = 0;
+  return inp;
+}
+
+function gsToggle(id, checked, onChange) {
+  const wrap = document.createElement('label');
+  wrap.className = 'gs-toggle';
+  const inp = document.createElement('input');
+  inp.type = 'checkbox'; inp.id = id; inp.checked = !!checked;
+  inp.onchange = () => onChange(inp.checked);
+  const track = document.createElement('div');
+  track.className = 'gs-toggle-track';
+  wrap.appendChild(inp); wrap.appendChild(track);
+  return wrap;
+}
+
+function gsFlash(type) { /* visual feedback placeholder */ }
+
+function gsSkipWaves(n) {
+  // End current wave early, advance wave counter
+  G.enemies = []; G.spawnQ = [];
+  if (G.waveOn) waveDone();
+  for (let i = 0; i < n - 1; i++) {
+    if (G.wave < G.totalWaves) {
+      G.wave++;
+      const bonus = Math.floor((25 + G.wave*5) * (G.diff?.cashM||1) * (G.relicFx?.waveBonusM||1));
+      G.cash += bonus;
+    }
+  }
+  updateHUD();
+}
+
+// Hook one-hit mode into applyDmg via a patch
+const _origApplyDmg = applyDmg;
+applyDmg = function(e, d, special, silent=false) {
+  const dmg = (G._oneHitMode && !silent) ? 999999 : d;
+  _origApplyDmg(e, dmg, special, silent);
+};
 
 // Desktop: global keypress listener for PAVANOP
 let _godBuf = '';
