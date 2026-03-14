@@ -763,9 +763,14 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   z-index: 600; display: none; align-items: center; gap: 8px;
   background: linear-gradient(135deg, rgba(255,200,0,.18), rgba(255,100,0,.12));
   border: 1px solid rgba(255,200,0,.6); border-radius: 20px;
-  padding: 6px 18px; pointer-events: none;
+  padding: 6px 18px; pointer-events: auto; cursor: pointer;
   box-shadow: 0 0 24px rgba(255,180,0,.4), inset 0 0 20px rgba(255,180,0,.06);
   animation: godPulse 2s ease-in-out infinite;
+  transition: box-shadow .15s, transform .15s;
+}
+#god-indicator:hover {
+  box-shadow: 0 0 40px rgba(255,180,0,.65), inset 0 0 30px rgba(255,180,0,.12);
+  transform: translateX(-50%) scale(1.04);
 }
 #god-indicator.show { display: flex; }
 #god-indicator .god-icon { font-size: 16px; }
