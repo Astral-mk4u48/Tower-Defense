@@ -260,15 +260,16 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 /* Abilities tab */
 .ab-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 8px; }
 .ab-btn {
-  border: 1px solid var(--border2); background: linear-gradient(160deg,rgba(255,255,255,.03),transparent);
+  border: 1px solid var(--border2); background: linear-gradient(160deg,rgba(255,255,255,.05),rgba(0,0,0,.4));
   border-radius: var(--radius); cursor: pointer; padding: 8px 5px; transition: var(--trans);
   text-align: center; position: relative; overflow: hidden;
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), inset 0 -1px 0 rgba(0,0,0,.3);
 }
 .ab-btn:hover:not(:disabled) { border-color: var(--border3); background: rgba(255,255,255,.05); transform:translateY(-1px); }
 .ab-btn:disabled { opacity: .35; cursor: not-allowed; filter: saturate(.4); }
 .ab-btn .ab-ico { font-size: 20px; display: block; }
-.ab-btn .ab-nam { font-size: 8px; font-family: 'Orbitron', monospace; display: block; margin: 3px 0 2px; letter-spacing:.5px; }
-.ab-btn .ab-uses { font-size: 9px; color: var(--text3); display: block; }
+.ab-btn .ab-nam { font-size: 8px; font-family: 'Orbitron', monospace; display: block; margin: 3px 0 2px; letter-spacing:.5px; color: var(--text); text-shadow: 0 1px 4px rgba(0,0,0,.8); }
+.ab-btn .ab-uses { font-size: 9px; color: var(--text2); display: block; filter: brightness(1.4); }
 .ab-cd-bar { position: absolute; bottom: 0; left: 0; height: 2px; background: linear-gradient(90deg,var(--cyan),#0055ff); transition: width .1s; box-shadow: 0 0 6px rgba(0,232,255,.6); }
 .ab-uses-dot { display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: var(--cyan); margin: 0 1px; box-shadow: 0 0 4px rgba(0,232,255,.5); }
 .ab-uses-dot.used { background: var(--border2); box-shadow: none; }
@@ -796,7 +797,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
   text-shadow: 0 0 18px rgba(245,200,66,.5);
 }
 #god-keypad .gkp-keys {
-  display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px;
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; max-width: 320px;
 }
 #god-keypad .gkp-key {
   width: 42px; height: 42px; border-radius: 8px;
@@ -807,7 +808,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 }
 #god-keypad .gkp-key:active { background: rgba(245,200,66,.15); border-color: var(--gold); color: var(--gold); transform: scale(.93); }
 #god-keypad .gkp-backspace {
-  grid-column: span 2; width: 100%; padding: 0 12px;
+  grid-column: span 4; width: 100%; padding: 0 12px;
   background: rgba(255,45,85,.07); border-color: rgba(255,45,85,.3); color: var(--red);
   font-size: 11px;
 }
@@ -1800,9 +1801,6 @@ function genDecorations(theme, seed, path) {
   return decs;
 }
 
-function onDecoration(c, r) {
-  return G.decorations && G.decorations.some(d => d.c===c && d.r===r);
-}
 
 function drawDecorations() {
   if (!G.decorations) return;
@@ -2295,6 +2293,7 @@ function initGame(mapKey) {
     waveOn: false, speed: 1, gameOver: false, won: false,
     towers: [], enemies: [], projs: [], particles: [], floats: [],
     spawnQ: [], spawnTimer: 0, waveSize: 0,
+    lastLives: maxLives,
     airOn: false, airX: 0,
     combo: 0, comboTimer: 0, bestCombo: 0,
     bgTime: 0, lastTs: 0,
@@ -2575,8 +2574,6 @@ function drawTowers() {
 
     // DJ buff radius
     if (tw.type === 'dj') {
-      const upgLevel = tw.tier;
-      const upg = def.upgrades[upgLevel-1];
       const br = tw.range * T;
       ctx.strokeStyle = 'rgba(100,200,255,0.15)';
       ctx.lineWidth = T * 0.5;
@@ -3288,15 +3285,17 @@ function placeTower(c, r) {
   // Count limit
   const count = G.towers.filter(t=>t.type===def.id).length;
   if (count >= def.maxCount) { toast(`❌ Max ${def.maxCount} ${def.name}`); return; }
-  if (G.cash < def.cost) { toast('❌ Not enough cash'); return; }
+  const adjCost = Math.floor(def.cost * (G.relicFx?.costM||1));
+  if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
 
-  G.cash -= def.cost;
+  G.cash -= adjCost;
   G.stats.spent += adjCost;
   G.stats.built++;
 
-  const tw = { c, r, type:def.id, dmg:def.dmg, range:def.range, rate:def.rate, aoe:def.aoe, tier:0, cd:0, special:null, lastTarget:null, totalSpent:def.cost };
+  const tw = { c, r, type:def.id, dmg:def.dmg, range:def.range, rate:def.rate, aoe:def.aoe, tier:0, cd:0, special:null, lastTarget:null, totalSpent:adjCost };
   G.towers.push(tw);
   updateHUD();
+  refreshTowerCounts();
   toast(`✅ ${def.name} placed!`);
 }
 
@@ -3333,8 +3332,9 @@ function showTowerInfo(tw) {
 
   const u = def.upgrades[tw.tier];
   const upBtn = document.getElementById('ti-upg-btn');
-  upBtn.textContent = u ? `⬆ ${u.label} ($${u.cost})` : '✓ MAX TIER';
-  upBtn.disabled = !u || G.cash < u.cost;
+  const adjUpgCost = u ? Math.floor(u.cost * (G.relicFx?.costM||1)) : 0;
+  upBtn.textContent = u ? `⬆ ${u.label} ($${adjUpgCost})` : '✓ MAX TIER';
+  upBtn.disabled = !u || G.cash < adjUpgCost;
 
   const totalSpent = tw.totalSpent || def.cost;
   document.getElementById('ti-sell-btn').textContent = `💰 SELL ($${Math.floor(totalSpent*0.6)})`;
@@ -3352,12 +3352,13 @@ function doUpgrade() {
   const def = TDEFS.find(d=>d.id===tw.type);
   if (tw.tier >= def.upgrades.length) { toast('Max tier!'); return; }
   const u = def.upgrades[tw.tier];
-  if (G.cash < u.cost) { toast('❌ Not enough cash'); return; }
-  G.cash -= u.cost;
+  const adjCost = Math.floor(u.cost * (G.relicFx?.costM||1));
+  if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
+  G.cash -= adjCost;
   G.upgradesDone = (G.upgradesDone||0) + 1;
   updateDailyProgress('upgrades', G.upgradesDone);
-  G.stats.spent += u.cost;
-  tw.totalSpent = (tw.totalSpent||def.cost) + u.cost;
+  G.stats.spent += adjCost;
+  tw.totalSpent = (tw.totalSpent||def.cost) + adjCost;
   tw.dmg *= u.dmgM; tw.range *= u.rngM; tw.rate *= u.rateM;
   tw.tier++;
   if (u.special) tw.special = u.special;
@@ -3373,6 +3374,7 @@ function doSell() {
   G.towers = G.towers.filter(x=>x!==tw);
   deselectAll();
   updateHUD();
+  refreshTowerCounts();
   toast(`💰 Sold for $${ref}`);
 }
 
@@ -3606,6 +3608,15 @@ function buildTowerPanel() {
       b.classList.add('sel');
     };
     grid.appendChild(b);
+  });
+}
+
+function refreshTowerCounts() {
+  document.querySelectorAll('.tower-btn[data-type]').forEach(b => {
+    const count = G.towers.filter(t => t.type === b.dataset.type).length;
+    const lim = b.querySelector('.tlimit');
+    const def = TDEFS.find(d => d.id === b.dataset.type);
+    if (lim && def) lim.textContent = `${count}/${def.maxCount}`;
   });
 }
 
@@ -4693,8 +4704,8 @@ document.addEventListener('keydown', e => {
     _seq.push(corner);
     clearTimeout(_seqTimer);
     _seqTimer = setTimeout(() => { _seq = []; }, 3000);
-    // Check if sequence matches so far
-    const matches = CORNER_SEQ.every((c, i) => _seq[i] === c);
+    // Check only the corners tapped so far (partial match)
+    const matches = _seq.every((c, i) => CORNER_SEQ[i] === c);
     if (!matches) { _seq = []; return; }
     if (_seq.length === CORNER_SEQ.length) {
       _seq = [];
