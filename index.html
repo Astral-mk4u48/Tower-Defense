@@ -419,7 +419,7 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
 }
 /* safe area for notches / home bars */
 @supports (padding: env(safe-area-inset-bottom)) {
-  #screen-menu  { padding-bottom: max(40px, env(safe-area-inset-bottom)); }
+  #screen-menu  { padding-bottom: max(90px, env(safe-area-inset-bottom)); }
   .controls-bar { padding-bottom: max(7px, env(safe-area-inset-bottom)); }
 }
 
@@ -625,10 +625,11 @@ html, body { width: 100%; height: 100%; overflow: hidden; background: var(--bg);
    XP / LEVEL BAR  (menu bottom)
 ═══════════════════════════════════════════════ */
 #prog-bar-wrap {
-  position: fixed; bottom: 0; left: 0; right: 0; z-index: 200;
+  position: fixed; bottom: 40px; left: 0; right: 0; z-index: 200;
   transition: opacity .3s;
   padding: 6px 14px; background: rgba(5,6,18,.97);
   border-top: 1px solid var(--border2);
+  border-bottom: 1px solid var(--border2);
   display: flex; align-items: center; gap: 10px;
 }
 .prog-lvl-badge {
