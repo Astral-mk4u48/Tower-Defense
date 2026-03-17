@@ -1144,6 +1144,68 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
 .theme-swatch .sw-name { font-family:'Orbitron',monospace; font-size:8px; letter-spacing:1px; color: rgba(255,255,255,.7); }
 .theme-swatch .sw-tag { font-size:7px; color:rgba(255,255,255,.4); font-family:'Rajdhani',sans-serif; }
 
+/* ── ROLE CARDS ── */
+.role-card {
+  border:1px solid var(--border2); background:var(--bg2); border-radius:var(--radius2);
+  padding:12px 10px; cursor:pointer; transition:var(--trans); text-align:center; position:relative;
+}
+.role-card:hover { border-color:var(--border3); transform:translateY(-2px); }
+.role-card.active { border-color:var(--cyan); background:rgba(0,232,255,.07); box-shadow:var(--glow-cyan); }
+.role-card .rc-icon { font-size:26px; display:block; margin-bottom:5px; }
+.role-card .rc-name { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; letter-spacing:1px; color:var(--text); }
+.role-card .rc-desc { font-size:9px; color:var(--text2); margin-top:3px; line-height:1.35; }
+.role-card .rc-towers { display:flex; gap:4px; justify-content:center; margin-top:6px; flex-wrap:wrap; }
+.role-card .rc-tower-pip { font-size:14px; }
+.role-card .rc-bonus { font-size:8px; color:var(--gold); font-family:'Orbitron',monospace; margin-top:4px; letter-spacing:.5px; }
+
+/* ── FLASH DEAL CARDS ── */
+.flash-card {
+  border:1px solid rgba(245,200,66,.35); background:rgba(245,200,66,.05);
+  border-radius:var(--radius); padding:10px 8px; text-align:center; position:relative;
+}
+.flash-card .fc-icon { font-size:22px; display:block; margin-bottom:4px; }
+.flash-card .fc-name { font-family:'Orbitron',monospace; font-size:9px; font-weight:700; letter-spacing:.5px; color:var(--gold); }
+.flash-card .fc-orig { font-size:10px; color:var(--text3); text-decoration:line-through; margin-top:3px; font-family:'Orbitron',monospace; }
+.flash-card .fc-price { font-size:13px; font-weight:900; color:var(--gold); font-family:'Orbitron',monospace; }
+.flash-card .fc-owned { position:absolute; top:5px; right:6px; font-size:8px; color:var(--green); font-family:'Orbitron',monospace; }
+.flash-card button { margin-top:6px; width:100%; padding:5px 4px; border-radius:4px; cursor:pointer; font-family:'Orbitron',monospace; font-size:8px; font-weight:700; border:1px solid; letter-spacing:.5px; transition:var(--trans); }
+.flash-card .fc-buy-s { border-color:rgba(0,232,255,.5); color:var(--cyan); background:rgba(0,232,255,.07); }
+.flash-card .fc-buy-s:hover { background:rgba(0,232,255,.15); }
+.flash-card .fc-buy-c { border-color:rgba(255,180,0,.5); color:#ffb830; background:rgba(255,180,0,.07); }
+.flash-card .fc-buy-c:hover { background:rgba(255,180,0,.15); }
+
+/* ── MP SERVER LIST ── */
+.mp-server-row {
+  display:flex; align-items:center; gap:10px; padding:8px 12px;
+  background:rgba(255,255,255,.02); border:1px solid var(--border2); border-radius:var(--radius);
+  transition:var(--trans);
+}
+.mp-server-row:hover { border-color:var(--border3); }
+.mp-server-row .sr-name { font-family:'Orbitron',monospace; font-size:10px; font-weight:700; color:var(--text); flex:1; }
+.mp-server-row .sr-info { font-size:9px; color:var(--text2); }
+.mp-server-row .sr-join { padding:4px 12px; border:1px solid rgba(57,255,160,.4); background:rgba(57,255,160,.07); color:var(--green); cursor:pointer; border-radius:5px; font-family:'Orbitron',monospace; font-size:9px; font-weight:700; }
+.mp-server-row .sr-join:hover { background:rgba(57,255,160,.15); }
+
+/* ── MP PLAYER PILL ── */
+.mp-player-pill {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:3px 9px; border-radius:20px; font-size:10px;
+  font-family:'Orbitron',monospace; font-weight:700; letter-spacing:.5px;
+  border:1px solid; background:rgba(255,255,255,.03);
+}
+
+/* ── CHAT MESSAGE ── */
+.chat-msg { font-size:11px; line-height:1.5; padding:1px 0; }
+.chat-msg .cm-name { font-weight:700; font-family:'Orbitron',monospace; font-size:9px; }
+.chat-msg .cm-text { color:var(--text2); }
+
+/* ── LOCKED TOWER OVERLAY ── */
+.tower-btn.locked-role { opacity:.5; cursor:pointer !important; }
+.tower-btn.locked-role::after {
+  content:'🔒'; position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);
+  font-size:18px; pointer-events:none;
+}
+
 </style>
 </head>
 <body>
@@ -1172,7 +1234,13 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
         <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:var(--accent,var(--cyan))" id="menu-shards">0</span>
         <span style="font-size:9px;letter-spacing:2px;color:var(--text3);font-family:'Orbitron',monospace">SHARDS</span>
       </div>
+      <div style="display:flex;align-items:center;gap:6px;background:rgba(255,180,0,.07);border:1px solid var(--border2);border-radius:var(--radius);padding:5px 12px;">
+        <span style="color:#ffb830;font-size:14px">🪙</span>
+        <span style="font-family:'Orbitron',monospace;font-size:13px;font-weight:700;color:#ffb830" id="menu-coins">0</span>
+        <span style="font-size:9px;letter-spacing:2px;color:var(--text3);font-family:'Orbitron',monospace">COINS</span>
+      </div>
       <button onclick="showCollection()" style="padding:5px 14px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;">🎲 COLLECTION</button>
+      <button onclick="showMultiplayer()" style="padding:5px 14px;border:1px solid rgba(57,255,160,.35);background:rgba(57,255,160,.06);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;letter-spacing:1px;">👥 MULTIPLAYER</button>
     </div>
     <div class="logo" id="logo-tap">
       <div class="logo-title">WORLD SIEGE</div>
@@ -1229,6 +1297,7 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
       <div class="hud-stat"><div class="hud-lbl">SCORE</div><div class="hud-val purple" id="hud-score">0</div></div>
       <div class="hud-stat"><div class="hud-lbl">KILLS</div><div class="hud-val blue" id="hud-kills">0</div></div>
       <div class="hud-stat" id="hud-shards-stat"><div class="hud-lbl">SHARDS</div><div class="hud-val shards" id="hud-shards">💎0</div></div>
+      <div class="hud-stat"><div class="hud-lbl">COINS</div><div class="hud-val" style="color:#ffb830" id="hud-coins">🪙0</div></div>
     </div>
     <!-- Active Relics bar -->
     <div id="relic-bar"></div>
@@ -1240,11 +1309,11 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
       </div>
       <div class="wave-bar"><div class="wave-bar-fill" id="wave-fill" style="width:0%"></div></div>
     </div>
-    <!-- Tabs -->
-    <div class="panel-tabs">
+    <div class="panel-tabs" id="panel-tabs">
       <div class="panel-tab active" data-tab="build">BUILD</div>
       <div class="panel-tab" data-tab="abilities">ABILITY</div>
       <div class="panel-tab" data-tab="stats">STATS</div>
+      <div class="panel-tab" data-tab="chat" id="tab-chat-btn" style="display:none;">💬 CHAT</div>
     </div>
 
     <!-- BUILD TAB -->
@@ -1282,6 +1351,16 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
       </div>
     </div>
 
+    <!-- CHAT TAB (MP only) -->
+    <div class="tab-pane" id="tab-chat" style="display:none;flex-direction:column;">
+      <div id="mp-chat-players" style="padding:6px 8px;border-bottom:1px solid var(--border2);display:flex;gap:6px;flex-wrap:wrap;"></div>
+      <div id="mp-chat-log" style="flex:1;overflow-y:auto;padding:6px 8px;display:flex;flex-direction:column;gap:3px;font-size:11px;"></div>
+      <div style="padding:6px 8px;border-top:1px solid var(--border2);display:flex;gap:5px;">
+        <input id="mp-chat-input" placeholder="Message…" maxlength="80" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:11px;border-radius:5px;padding:5px 8px;outline:none;" onkeydown="if(event.key==='Enter')sendChat()">
+        <button onclick="sendChat()" style="padding:5px 10px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:5px;font-family:'Orbitron',monospace;font-size:9px;">▶</button>
+      </div>
+    </div>
+
     <!-- Controls -->
     <div class="controls-bar">
       <button class="ctrl-btn primary" id="btn-start" onclick="startWave()">▶ START</button>
@@ -1297,6 +1376,15 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
     <div class="ov-title" style="color:var(--red)">DEFEAT</div>
     <div class="ov-stars" id="ov-lose-stars">☆☆☆</div>
     <div class="ov-sub" id="ov-lose-sub"></div>
+    <div id="revive-section" style="margin:12px 0;padding:12px;background:rgba(0,232,255,.05);border:1px solid rgba(0,232,255,.25);border-radius:var(--radius2);display:none;">
+      <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--cyan);margin-bottom:8px;">⚡ REVIVE AVAILABLE</div>
+      <div id="revive-desc" style="font-size:11px;color:var(--text2);margin-bottom:10px;"></div>
+      <div id="revive-flash-deals" style="display:flex;flex-direction:column;gap:6px;margin-bottom:10px;"></div>
+      <div style="display:flex;gap:8px;justify-content:center;flex-wrap:wrap;">
+        <button class="ov-btn primary" id="revive-shards-btn" onclick="doRevive('shards')" style="border-color:var(--cyan);color:var(--cyan);">💎 REVIVE</button>
+        <button class="ov-btn" id="revive-coins-btn" onclick="doRevive('coins')" style="border-color:#ffb830;color:#ffb830;">🪙 REVIVE</button>
+      </div>
+    </div>
     <div class="ov-btns">
       <button class="ov-btn primary" onclick="retryGame()">↺ RETRY</button>
       <button class="ov-btn" onclick="goMenu()">⬅ MENU</button>
@@ -1356,6 +1444,79 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
 <div id="bounty-notif" id="bounty-notif"></div>
 
 
+<!-- ═══════════════════════ MULTIPLAYER SCREEN ═══════════════════════ -->
+<div id="screen-mp" class="screen" style="flex-direction:column;align-items:center;overflow-y:auto;padding:24px 16px 72px;background:var(--bg);">
+  <div id="menu-bg3" style="position:fixed;inset:0;z-index:0;background:var(--menu-bg,radial-gradient(ellipse at 50% 30%,#0a0f2a 0%,#04060f 60%));opacity:.85;pointer-events:none;"></div>
+  <div style="position:relative;z-index:1;width:100%;max-width:860px;">
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+      <button onclick="showMenu()" style="padding:6px 14px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;">← BACK</button>
+      <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;letter-spacing:4px;color:var(--green);">👥 MULTIPLAYER</div>
+      <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
+        <span style="font-size:11px;color:var(--text2);font-family:'Orbitron',monospace;">NAME:</span>
+        <input id="mp-name-input" maxlength="16" placeholder="Warrior" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;border-radius:6px;padding:5px 10px;width:110px;outline:none;" oninput="saveMPName(this.value)">
+      </div>
+    </div>
+
+    <div style="background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:var(--radius2);padding:14px 16px;margin-bottom:16px;">
+      <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:var(--text2);margin-bottom:10px;">⚔️ YOUR ROLE</div>
+      <div id="role-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;"></div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:20px;" id="mp-main-panels">
+      <!-- CREATE ROOM -->
+      <div style="background:rgba(57,255,160,.04);border:1px solid rgba(57,255,160,.25);border-radius:var(--radius2);padding:18px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:14px;">🏠 CREATE ROOM</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">MAP</label>
+          <select id="mp-map-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:6px 8px;width:100%;outline:none;cursor:pointer;"></select>
+          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:4px;">DIFFICULTY</label>
+          <select id="mp-diff-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:6px 8px;width:100%;outline:none;cursor:pointer;">
+            <option value="easy">🌿 EASY</option>
+            <option value="normal" selected>⚔️ NORMAL</option>
+            <option value="hard">🔥 HARD</option>
+            <option value="nightmare">💀 NIGHTMARE</option>
+          </select>
+          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:4px;">VISIBILITY</label>
+          <div style="display:flex;gap:6px;">
+            <button class="mp-vis-btn active" id="vis-private" onclick="setVisibility('private')" style="flex:1;padding:7px;border:1px solid rgba(57,255,160,.4);background:rgba(57,255,160,.1);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🔒 PRIVATE</button>
+            <button class="mp-vis-btn" id="vis-public" onclick="setVisibility('public')" style="flex:1;padding:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🌐 PUBLIC</button>
+          </div>
+          <button onclick="createRoom()" style="width:100%;padding:11px;border:1px solid var(--green);background:rgba(57,255,160,.08);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">⚡ CREATE SERVER</button>
+        </div>
+        <div id="mp-room-created" style="display:none;margin-top:14px;text-align:center;">
+          <div style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:6px;">YOUR ROOM CODE</div>
+          <div id="mp-room-code-display" style="font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:var(--cyan);letter-spacing:8px;text-shadow:0 0 20px rgba(0,232,255,.5);"></div>
+          <div style="font-size:10px;color:var(--text2);margin-top:6px;">Share this with friends!</div>
+          <div id="mp-player-list" style="margin-top:12px;display:flex;flex-direction:column;gap:4px;"></div>
+          <button onclick="mpStartGame()" id="mp-start-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid var(--gold);background:rgba(245,200,66,.08);color:var(--gold);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;">▶ START GAME</button>
+        </div>
+      </div>
+
+      <!-- JOIN ROOM -->
+      <div style="background:rgba(0,232,255,.03);border:1px solid rgba(0,232,255,.2);border-radius:var(--radius2);padding:18px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:14px;">🔗 JOIN ROOM</div>
+        <div style="display:flex;flex-direction:column;gap:8px;">
+          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">ENTER 6-CHAR CODE</label>
+          <input id="mp-join-code" maxlength="6" placeholder="ABC123" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--cyan);font-family:'Orbitron',monospace;font-size:22px;font-weight:900;border-radius:8px;padding:10px 14px;letter-spacing:6px;text-transform:uppercase;outline:none;width:100%;" oninput="this.value=this.value.toUpperCase()">
+          <button onclick="joinRoom()" style="width:100%;padding:11px;border:1px solid var(--cyan);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">🔗 JOIN SERVER</button>
+        </div>
+        <div id="mp-join-status" style="margin-top:10px;font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;text-align:center;min-height:18px;"></div>
+      </div>
+    </div>
+
+    <!-- PUBLIC SERVER LIST -->
+    <div style="background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:var(--radius2);padding:16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--text2);">🌐 PUBLIC SERVERS</div>
+        <button onclick="refreshServerList()" style="padding:4px 12px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">↺ REFRESH</button>
+      </div>
+      <div id="mp-server-list" style="display:flex;flex-direction:column;gap:6px;min-height:60px;">
+        <div style="text-align:center;color:var(--text3);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;padding:20px;">NO PUBLIC SERVERS FOUND</div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ═══════════════════════ COLLECTION SCREEN ═══════════════════════ -->
 <div id="screen-collection" class="screen">
   <div id="menu-bg2" style="position:fixed;inset:0;z-index:0;background:var(--menu-bg,radial-gradient(ellipse at 50% 30%,#0a0f2a 0%,#04060f 60%,#020308 100%));opacity:.85;"></div>
@@ -1412,6 +1573,23 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
     <div id="ctab-augments" class="coll-grid" style="display:none;margin-bottom:20px"></div>
     <div id="ctab-achievements" class="ach-grid" style="margin-bottom:20px"></div>
     <div id="ctab-history" style="display:none;flex-direction:column;gap:6px;padding:8px;margin-bottom:20px"></div>
+  </div>
+</div>
+
+<!-- LOADOUT SCREEN MODAL -->
+<div class="pull-modal-bg" id="loadout-modal">
+  <div class="pull-modal" style="max-width:700px;max-height:88vh;overflow-y:auto;">
+    <div class="pull-modal-title" style="font-size:15px;letter-spacing:3px;">⚔️ CHOOSE YOUR ROLE</div>
+    <div style="font-size:10px;color:var(--text2);margin-bottom:16px;">Your role defines your 3 free core towers. Locked towers need unlocking.</div>
+    <div id="loadout-role-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;margin-bottom:16px;"></div>
+    <div id="loadout-flash-deals" style="display:none;">
+      <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:2px;color:var(--gold);margin-bottom:10px;border-top:1px solid var(--border2);padding-top:12px;">⚡ FLASH DEALS — Unlock extra towers before the match!</div>
+      <div id="loadout-deals-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:8px;margin-bottom:12px;"></div>
+    </div>
+    <div style="display:flex;gap:8px;justify-content:center;">
+      <button onclick="confirmLoadout()" style="padding:10px 32px;border:1px solid var(--green);background:rgba(57,255,160,.08);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;">▶ PLAY</button>
+      <button onclick="closeLoadout()" style="padding:10px 20px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;">CANCEL</button>
+    </div>
   </div>
 </div>
 
@@ -2457,6 +2635,10 @@ function initGame(mapKey) {
     bounty: null, bountyKills: 0,
     // DJ buff cache (rebuilt each tick)
     djBuffs: {},
+    // MP / revive state (always reset)
+    isMP: false, mpHost: false, mpPlayers: [],
+    reviveCount: 0,
+    _mpIncomeApplied: false,
   };
 }
 
@@ -3663,6 +3845,8 @@ function updateHUD() {
   document.getElementById('hud-cash').textContent = '$'+G.cash;
   const shEl = document.getElementById('hud-shards');
   if (shEl) shEl.textContent = '💎'+(PLAYER.shards||0);
+  const coEl = document.getElementById('hud-coins');
+  if (coEl) coEl.textContent = '🪙'+(PLAYER.coins||0);
   document.getElementById('hud-lives').textContent = G.lives;
   document.getElementById('hud-score').textContent = G.score.toLocaleString();
   document.getElementById('hud-kills').textContent = G.kills;
@@ -3748,8 +3932,13 @@ function buildTowerPanel() {
       <span class="tlimit">0/${def.maxCount}</span>
     `;
     b.onclick = () => {
+      // MP role lock check
+      if (G.isMP && !isTowerUnlocked(def.id) && !G.godMode) {
+        toast(`🔒 ${def.name} not in your role loadout`);
+        return;
+      }
       const adjCost = Math.floor(def.cost * (G.relicFx?.costM||1));
-    if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
+      if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
       G.selTower = def.id;
       G.selPlaced = null;
       document.getElementById('tower-info').style.display='none';
@@ -3893,12 +4082,21 @@ function startGame(mapKey) {
 
 function goMenu() {
   if (raf) { cancelAnimationFrame(raf); raf=null; }
+  // Clean up any active MP session
+  if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
+  mpConns = []; mpIsHost = false; mpRoomCode = ''; mpPlayers = [];
+  document.getElementById('mp-room-created').style.display = 'none';
+  document.getElementById('mp-join-status').textContent = '';
+  const chatBtn = document.getElementById('tab-chat-btn');
+  if (chatBtn) chatBtn.style.display = 'none';
+
   document.getElementById('screen-game').classList.remove('active');
   document.getElementById('ov-lose').classList.remove('active');
   document.getElementById('ov-win').classList.remove('active');
   document.getElementById('screen-menu').classList.add('active');
   const pb2 = document.getElementById('prog-bar-wrap'); if(pb2) pb2.style.display='';
   updateShardDisplays();
+  updateCoinDisplays();
   refreshDailyBar();
   startMenuParticles();
 }
@@ -4290,10 +4488,13 @@ function showCollection() {
 }
 
 function showMenu() {
-  document.getElementById('screen-collection').classList.remove('active');
+  ['screen-collection','screen-mp'].forEach(id=>{const e=document.getElementById(id);if(e)e.classList.remove('active');});
   document.getElementById('screen-menu').classList.add('active');
+  const pb2 = document.getElementById('prog-bar-wrap'); if(pb2) pb2.style.display='';
   updateShardDisplays();
+  updateCoinDisplays();
   refreshDailyBar();
+  startMenuParticles();
 }
 
 function switchCollTab(tab) {
@@ -4641,31 +4842,6 @@ function getDailyProgress() {
   const key = 'daily_'+new Date().toDateString();
   const saved = PLAYER.dailyProgress||{};
   return { ch, prog: saved[key]||0, done: (saved[key]||0) >= ch.goal, key };
-}
-
-function updateDailyProgress(statName, value) {
-  const {ch, prog, done, key} = getDailyProgress();
-  if (done) return;
-  if (ch.stat !== statName) return;
-  const newProg = Math.max(prog, value);
-  if (!PLAYER.dailyProgress) PLAYER.dailyProgress = {};
-  if (newProg > prog) {
-    PLAYER.dailyProgress[key] = newProg;
-    savePlayer();
-    if (newProg >= ch.goal && !done) {
-      // Complete!
-      PLAYER.shards = (PLAYER.shards||0) + ch.reward;
-      savePlayer();
-      PLAYER.dailyCompleted = (PLAYER.dailyCompleted||0) + 1;
-      savePlayer();
-      toast('🎯 DAILY COMPLETE! +'+ch.reward+' 💎');
-      updateShardDisplays();
-      updateXPBar();
-      addXP(ch.reward * 2);
-      checkAchievements();
-    }
-    refreshDailyBar();
-  }
 }
 
 function refreshDailyBar() {
@@ -5439,10 +5615,1127 @@ function updateDailyProgress(statName, value) {
   }
 }
 
+
+// ═══════════════════════════════════════════════════════════════
+// COINS SYSTEM  (separate currency earned from playing)
+// ═══════════════════════════════════════════════════════════════
+PLAYER.coins = Number(PLAYER.coins) || 0;
+
+function addCoins(n) {
+  PLAYER.coins = (PLAYER.coins||0) + n;
+  savePlayer(); updateCoinDisplays();
+}
+function spendCoins(n) {
+  if ((PLAYER.coins||0) < n) return false;
+  PLAYER.coins -= n; savePlayer(); updateCoinDisplays(); return true;
+}
+function updateCoinDisplays() {
+  document.querySelectorAll('.coin-display').forEach(el=>el.textContent=PLAYER.coins||0);
+  const menuEl = document.getElementById('menu-coins'); if(menuEl) menuEl.textContent=PLAYER.coins||0;
+  const hudEl  = document.getElementById('hud-coins');  if(hudEl)  hudEl.textContent='🪙'+(PLAYER.coins||0);
+}
+
+// Award coins at wave end and win
+const _origWaveDone = waveDone;
+waveDone = function() {
+  _origWaveDone();
+  // Per-wave coin income
+  addCoins(Math.floor(5 + G.wave * 2));
+};
+const _origTriggerWin = triggerWin;
+triggerWin = function() {
+  _origTriggerWin();
+  // Win coin bonus handled in _triggerWinForAll below
+};
+
+// ═══════════════════════════════════════════════════════════════
+// NEW TOWERS (6 new role-specific towers added to TDEFS)
+// ═══════════════════════════════════════════════════════════════
+TDEFS.push(
+  { id:'tesla',   name:'TESLA',   cat:'damage',  icon:'⚡', cost:380,  dmg:35,  range:3.2, rate:1.4,  aoe:2.2, maxCount:5,
+    desc:'Chains lightning to 3 enemies.',
+    upgrades:[
+      {cost:280, label:'Mk II',      dmgM:1.5,  rngM:1.0,  rateM:0.88, special:'chain'},
+      {cost:440, label:'Mk III',     dmgM:2.1,  rngM:1.15, rateM:0.84, special:'chain'},
+      {cost:680, label:'Mk IV',      dmgM:3.0,  rngM:1.25, rateM:0.78, special:'chain'},
+      {cost:1000,label:'STORM COIL', dmgM:4.2,  rngM:1.35, rateM:0.70, special:'chain'},
+      {cost:1500,label:'THUNDERGOD', dmgM:6.5,  rngM:1.5,  rateM:0.58, special:'chain'},
+    ]},
+  { id:'sniper',  name:'SNIPER',  cat:'damage',  icon:'🎯', cost:450,  dmg:200, range:6.5, rate:3.5,  aoe:0,   maxCount:4,
+    desc:'Extreme range. One-shot potential.',
+    upgrades:[
+      {cost:350, label:'Mk II',      dmgM:1.6,  rngM:1.1,  rateM:0.90, special:'pierce'},
+      {cost:550, label:'Mk III',     dmgM:2.4,  rngM:1.2,  rateM:0.85, special:'pierce'},
+      {cost:820, label:'Mk IV',      dmgM:3.5,  rngM:1.3,  rateM:0.80, special:'pierce'},
+      {cost:1200,label:'DEADEYE',    dmgM:5.0,  rngM:1.4,  rateM:0.72, special:'pierce'},
+      {cost:1800,label:'VOID SHOT',  dmgM:8.0,  rngM:1.6,  rateM:0.60, special:'pierce'},
+    ]},
+  { id:'bunker',  name:'BUNKER',  cat:'damage',  icon:'🧱', cost:500,  dmg:60,  range:2.5, rate:2.2,  aoe:1.5, maxCount:4,
+    desc:'High HP absorber. Slows nearby enemies.',
+    upgrades:[
+      {cost:380, label:'Mk II',      dmgM:1.4,  rngM:1.0,  rateM:0.92, special:'slow'},
+      {cost:580, label:'Mk III',     dmgM:2.0,  rngM:1.1,  rateM:0.88, special:'slow'},
+      {cost:860, label:'Mk IV',      dmgM:2.8,  rngM:1.15, rateM:0.82, special:'slow'},
+      {cost:1250,label:'FORTRESS',   dmgM:4.0,  rngM:1.25, rateM:0.75, special:'slow'},
+      {cost:1900,label:'CITADEL',    dmgM:6.0,  rngM:1.35, rateM:0.65, special:'permafreeze'},
+    ]},
+  { id:'medic',   name:'MEDIC',   cat:'support', icon:'💊', cost:350,  dmg:0,   range:3.5, rate:999,  aoe:0,   maxCount:4,
+    desc:'Restores +1 life every 3 waves.',
+    upgrades:[
+      {cost:260, label:'Mk II',      dmgM:1, rngM:1.1, rateM:1, healWaves:3},
+      {cost:400, label:'Mk III',     dmgM:1, rngM:1.2, rateM:1, healWaves:2},
+      {cost:600, label:'Mk IV',      dmgM:1, rngM:1.3, rateM:1, healWaves:2},
+      {cost:900, label:'TRAUMA',     dmgM:1, rngM:1.4, rateM:1, healWaves:1},
+      {cost:1350,label:'ANGEL',      dmgM:1, rngM:1.6, rateM:1, healWaves:1},
+    ]},
+  { id:'voidtrap',name:'VOID TRAP',cat:'damage',  icon:'🔮', cost:280,  dmg:180, range:1.5, rate:8.0,  aoe:2.0, maxCount:6,
+    desc:'Placed on-path. Detonates on contact.',
+    upgrades:[
+      {cost:200, label:'Mk II',      dmgM:1.6,  rngM:1.0,  rateM:0.90, special:'explosive'},
+      {cost:320, label:'Mk III',     dmgM:2.4,  rngM:1.1,  rateM:0.86, special:'explosive'},
+      {cost:500, label:'Mk IV',      dmgM:3.5,  rngM:1.2,  rateM:0.80, special:'explosive'},
+      {cost:750, label:'SINGULARITY',dmgM:5.0,  rngM:1.35, rateM:0.72, special:'explosive'},
+      {cost:1100,label:'NOVA TRAP',  dmgM:7.5,  rngM:1.5,  rateM:0.60, special:'explosive'},
+    ]},
+  { id:'barrier', name:'BARRIER', cat:'support', icon:'🛡️', cost:300,  dmg:0,   range:2.0, rate:999,  aoe:0,   maxCount:5,
+    desc:'Slows all enemies in wide radius.',
+    upgrades:[
+      {cost:220, label:'Mk II',      dmgM:1, rngM:1.2, rateM:1, special:'slow'},
+      {cost:350, label:'Mk III',     dmgM:1, rngM:1.4, rateM:1, special:'slow'},
+      {cost:520, label:'Mk IV',      dmgM:1, rngM:1.6, rateM:1, special:'freeze'},
+      {cost:780, label:'AEGIS',      dmgM:1, rngM:1.8, rateM:1, special:'freeze'},
+      {cost:1200,label:'NULLFIELD',  dmgM:1, rngM:2.2, rateM:1, special:'permafreeze'},
+    ]}
+);
+
+// Tesla chain lightning is handled in the tower fire section via existing applyDmg
+// Medic tower: heal per wave tracked in waveDone
+
+// ═══════════════════════════════════════════════════════════════
+// ROLE DEFINITIONS
+// ═══════════════════════════════════════════════════════════════
+const ROLES = [
+  {
+    id:'assault', name:'ASSAULT', icon:'⚔️',
+    desc:'Pure offense. Maximum damage output.',
+    towers:['gunner','rocket','mortar'],
+    bonus:'🔥 +10% tower damage',
+    bonusFx:{ dmgM:1.10 },
+    color:'#ff6644'
+  },
+  {
+    id:'sniper_role', name:'MARKSMAN', icon:'🎯',
+    desc:'Long-range precision. Single-target specialist.',
+    towers:['scout','laser','sniper'],
+    bonus:'🎯 +15% range on all towers',
+    bonusFx:{ rangeM:1.15 },
+    color:'#00e8ff'
+  },
+  {
+    id:'tank_role', name:'TANK', icon:'🧱',
+    desc:'Slow & heavy. Absorb the front line.',
+    towers:['bunker','frost','barrier'],
+    bonus:'🛡️ +4 starting lives',
+    bonusFx:{ bonusLives:4 },
+    color:'#6688ff'
+  },
+  {
+    id:'support', name:'SUPPORT', icon:'💊',
+    desc:'Heals, buffs, and sustains the team.',
+    towers:['medic','dj','farm'],
+    bonus:'💎 +15% income per wave',
+    bonusFx:{ waveBonusM:1.15 },
+    color:'#39ffa0'
+  },
+  {
+    id:'trapper', name:'TRAPPER', icon:'🔮',
+    desc:'Crowd control and area denial.',
+    towers:['voidtrap','tesla','pyro'],
+    bonus:'⚡ Abilities recharge 15% faster',
+    bonusFx:{ cdM:0.85 },
+    color:'#c93eff'
+  },
+  {
+    id:'allround', name:'ALL-ROUND', icon:'⭐',
+    desc:'Balanced access. No restrictions, no bonus.',
+    towers:['scout','gunner','rocket'],
+    bonus:'🌀 Balanced — no bonus, no penalty',
+    bonusFx:{},
+    color:'#ffcc33'
+  },
+];
+
+// ═══════════════════════════════════════════════════════════════
+// TOWER UNLOCK SYSTEM  (persistent per-player)
+// ═══════════════════════════════════════════════════════════════
+// All tower IDs that require unlocking (default towers are free)
+const LOCKED_TOWERS_BY_DEFAULT = ['tesla','sniper','bunker','medic','voidtrap','barrier'];
+// Coin cost to unlock (20% off flash deal = multiply by 0.8)
+const TOWER_UNLOCK_COSTS = {
+  scout:0, gunner:0, pyro:0, rocket:0, frost:0, laser:0, farm:0, dj:0, mortar:0,
+  tesla:200, sniper:250, bunker:220, medic:180, voidtrap:160, barrier:170,
+};
+// Shard cost (alternative unlock)
+const TOWER_UNLOCK_SHARDS = {
+  tesla:80, sniper:100, bunker:90, medic:70, voidtrap:60, barrier:65,
+};
+
+if (!PLAYER.unlockedTowers) PLAYER.unlockedTowers = {};
+if (!PLAYER.selectedRole) PLAYER.selectedRole = 'allround';
+if (!PLAYER.mpName) PLAYER.mpName = 'Warrior';
+
+function isTowerUnlocked(towerId) {
+  if (!LOCKED_TOWERS_BY_DEFAULT.includes(towerId)) return true;
+  if (PLAYER.unlockedTowers[towerId]) return true;
+  // Check if it's in the selected role's core towers
+  const role = ROLES.find(r=>r.id===PLAYER.selectedRole);
+  return role && role.towers.includes(towerId);
+}
+
+function unlockTower(towerId, currency) {
+  if (isTowerUnlocked(towerId)) return true;
+  const coinCost = Math.floor((TOWER_UNLOCK_COSTS[towerId]||200) * 0.8); // 20% flash deal
+  const shardCost = Math.floor((TOWER_UNLOCK_SHARDS[towerId]||80) * 0.8);
+  if (currency === 'coins') {
+    if ((PLAYER.coins||0) < coinCost) { toast(`❌ Need 🪙${coinCost} coins`); return false; }
+    spendCoins(coinCost);
+  } else {
+    if ((PLAYER.shards||0) < shardCost) { toast(`❌ Need 💎${shardCost} shards`); return false; }
+    PLAYER.shards -= shardCost; savePlayer(); updateShardDisplays();
+  }
+  PLAYER.unlockedTowers[towerId] = true;
+  savePlayer();
+  toast(`✅ ${towerId.toUpperCase()} unlocked!`);
+  return true;
+}
+
+// ═══════════════════════════════════════════════════════════════
+// LOADOUT SCREEN
+// ═══════════════════════════════════════════════════════════════
+let _loadoutPendingMap = null;
+let _selectedLoadoutRole = PLAYER.selectedRole || 'allround';
+let _mpPendingStart = null;
+
+function openLoadout(mapKey) {
+  _loadoutPendingMap = mapKey;
+  _selectedLoadoutRole = PLAYER.selectedRole || 'allround';
+  buildLoadoutModal();
+  document.getElementById('loadout-modal').classList.add('active');
+}
+
+function closeLoadout() {
+  _mpPendingStart = null;
+  document.getElementById('loadout-modal').classList.remove('active');
+}
+
+function confirmLoadout() {
+  PLAYER.selectedRole = _selectedLoadoutRole;
+  savePlayer();
+  closeLoadout();
+  if (_mpPendingStart) {
+    const data = _mpPendingStart;
+    _mpPendingStart = null;
+    broadcastMPData({ type:'start_game', ...data });
+    mpStartGameAsHost(data);
+  }
+}
+
+function buildLoadoutModal() {
+  const grid = document.getElementById('loadout-role-grid');
+  grid.innerHTML = '';
+  ROLES.forEach(role => {
+    const card = document.createElement('div');
+    card.className = 'role-card' + (_selectedLoadoutRole===role.id?' active':'');
+    card.style.borderColor = _selectedLoadoutRole===role.id ? role.color : '';
+    card.innerHTML = `
+      <span class="rc-icon">${role.icon}</span>
+      <div class="rc-name" style="color:${role.color}">${role.name}</div>
+      <div class="rc-desc">${role.desc}</div>
+      <div class="rc-towers">${role.towers.map(t=>{
+        const def = TDEFS.find(d=>d.id===t);
+        return `<span class="rc-tower-pip" title="${def?.name||t}">${def?.icon||'❓'}</span>`;
+      }).join('')}</div>
+      <div class="rc-bonus">${role.bonus}</div>
+    `;
+    card.onclick = () => {
+      _selectedLoadoutRole = role.id;
+      buildLoadoutModal();
+    };
+    grid.appendChild(card);
+  });
+
+  // Flash deals for locked towers not in selected role
+  const role = ROLES.find(r=>r.id===_selectedLoadoutRole);
+  const lockedNotInRole = LOCKED_TOWERS_BY_DEFAULT.filter(tid => {
+    if (PLAYER.unlockedTowers[tid]) return false;
+    if (role && role.towers.includes(tid)) return false;
+    return true;
+  });
+
+  const flashSection = document.getElementById('loadout-flash-deals');
+  const dealsGrid = document.getElementById('loadout-deals-grid');
+  if (lockedNotInRole.length === 0) { flashSection.style.display='none'; return; }
+  flashSection.style.display = '';
+  dealsGrid.innerHTML = '';
+  lockedNotInRole.forEach(tid => {
+    const def = TDEFS.find(d=>d.id===tid);
+    if (!def) return;
+    const coinCost = Math.floor((TOWER_UNLOCK_COSTS[tid]||200)*0.8);
+    const shardCost = Math.floor((TOWER_UNLOCK_SHARDS[tid]||80)*0.8);
+    const origCoin = TOWER_UNLOCK_COSTS[tid]||200;
+    const card = document.createElement('div');
+    card.className = 'flash-card';
+    card.id = 'flash-card-'+tid;
+    card.innerHTML = `
+      <span class="fc-icon">${def.icon}</span>
+      <div class="fc-name">${def.name}</div>
+      <div style="font-size:9px;color:var(--text3);margin:2px 0;">${def.desc}</div>
+      <div class="fc-orig">🪙${origCoin}</div>
+      <div class="fc-price">🪙${coinCost} <span style="font-size:9px;color:var(--text3)">or 💎${shardCost}</span></div>
+      <div style="font-size:8px;color:var(--gold);margin-top:3px;font-family:'Orbitron',monospace;">⚡ 20% OFF</div>
+      <button class="fc-buy-c" onclick="flashDealBuy('${tid}','coins')">🪙 BUY WITH COINS</button>
+      <button class="fc-buy-s" onclick="flashDealBuy('${tid}','shards')">💎 BUY WITH SHARDS</button>
+    `;
+    dealsGrid.appendChild(card);
+  });
+}
+
+function flashDealBuy(towerId, currency) {
+  if (unlockTower(towerId, currency)) {
+    // Replace card with owned indicator
+    const card = document.getElementById('flash-card-'+towerId);
+    if (card) {
+      card.style.borderColor = 'rgba(57,255,160,.4)';
+      card.innerHTML = `<span class="fc-icon">${TDEFS.find(d=>d.id===towerId)?.icon||'✅'}</span><div class="fc-owned">✅ OWNED</div><div class="fc-name" style="color:var(--green)">UNLOCKED!</div>`;
+    }
+    buildLoadoutModal(); // refresh to remove from list
+  }
+}
+
+// buildMapGrid already routes to openLoadout via direct edit of card.onclick above
+
+// ═══════════════════════════════════════════════════════════════
+// ROLE DISPLAY IN MENU
+// ═══════════════════════════════════════════════════════════════
+function buildRoleRow() {
+  const row = document.getElementById('role-row');
+  if (!row) return;
+  row.innerHTML = '';
+  ROLES.forEach(role => {
+    const btn = document.createElement('div');
+    btn.className = 'role-card' + (PLAYER.selectedRole===role.id?' active':'');
+    btn.style.cssText = `cursor:pointer;${PLAYER.selectedRole===role.id?'border-color:'+role.color+';':''}`; 
+    btn.innerHTML = `
+      <span class="rc-icon" style="font-size:20px">${role.icon}</span>
+      <div class="rc-name" style="color:${role.color};font-size:9px">${role.name}</div>
+      <div class="rc-towers" style="margin-top:4px">${role.towers.map(t=>TDEFS.find(d=>d.id===t)?.icon||'').join(' ')}</div>
+    `;
+    btn.onclick = () => {
+      PLAYER.selectedRole = role.id;
+      savePlayer();
+      buildRoleRow();
+      toast(`⚔️ Role: ${role.name}`);
+    };
+    row.appendChild(btn);
+  });
+}
+
+// Apply role bonus at game start — extends the existing god-mode chain
+// Roles are MP-only: only apply when G.isMP is true
+{
+  const _prev = applyRelicsToGame;
+  applyRelicsToGame = function() {
+    _prev();
+    if (!G.isMP) return; // roles are MP-only
+    const role = ROLES.find(r=>r.id===(PLAYER.selectedRole||'allround'));
+    if (!role || !role.bonusFx) return;
+    const fx = role.bonusFx;
+    if (fx.dmgM)       G.relicFx.dmgM    = (G.relicFx.dmgM||1)    * fx.dmgM;
+    if (fx.rangeM)     G.relicFx.rangeM  = (G.relicFx.rangeM||1)  * fx.rangeM;
+    if (fx.bonusLives) { G.lives += fx.bonusLives; G.maxLives += fx.bonusLives; }
+    if (fx.waveBonusM) G.relicFx.waveBonusM = (G.relicFx.waveBonusM||1) * fx.waveBonusM;
+    if (fx.cdM)        G.relicFx.cdM     = (G.relicFx.cdM||1)     * fx.cdM;
+  };
+}
+
+// Enforce role tower locks in tower panel — MP-only
+{
+  const _prev = buildTowerPanel;
+  buildTowerPanel = function() {
+    _prev();
+    if (!G.isMP) return; // no restrictions in solo
+    document.querySelectorAll('.tower-btn[data-type]').forEach(btn => {
+      const tid = btn.dataset.type;
+      if (!isTowerUnlocked(tid)) {
+        btn.classList.add('locked-role');
+        btn.title = `🔒 ${TDEFS.find(d=>d.id===tid)?.name||tid} — not in loadout`;
+      } else {
+        btn.classList.remove('locked-role');
+      }
+    });
+  };
+}
+
+// Patch placement to block locked towers — MP-only
+{
+  const _prev = placeTower;
+  placeTower = function(c, r) {
+    if (G.isMP && G.selTower && !isTowerUnlocked(G.selTower) && !G.godMode) {
+      toast(`🔒 Tower not in your loadout!`);
+      return;
+    }
+    _prev(c, r);
+  };
+}
+
+// ═══════════════════════════════════════════════════════════════
+// REVIVE SYSTEM
+// ═══════════════════════════════════════════════════════════════
+const REVIVE_SHARD_COST = 150;
+const REVIVE_COIN_COST  = 400;
+const MAX_REVIVES_PER_RUN = 2;
+
+function setupReviveUI() {
+  const reviveSec = document.getElementById('revive-section');
+  if (!reviveSec) return;
+  if (!G || G.reviveCount >= MAX_REVIVES_PER_RUN) { reviveSec.style.display='none'; return; }
+  if ((PLAYER.shards||0) < REVIVE_SHARD_COST && (PLAYER.coins||0) < REVIVE_COIN_COST) { reviveSec.style.display='none'; return; }
+
+  reviveSec.style.display = '';
+  const revivedLives = Math.max(3, Math.floor(G.maxLives * 0.35));
+  document.getElementById('revive-desc').textContent =
+    `Revive with ${revivedLives} lives and keep your towers! (${MAX_REVIVES_PER_RUN - (G.reviveCount||0)} revives left)`;
+
+  // Flash deals for remaining locked towers
+  const flashEl = document.getElementById('revive-flash-deals');
+  const lockedAndAffordable = LOCKED_TOWERS_BY_DEFAULT.filter(tid => {
+    if (isTowerUnlocked(tid)) return false;
+    const sc = Math.floor((TOWER_UNLOCK_SHARDS[tid]||80)*0.8);
+    const cc = Math.floor((TOWER_UNLOCK_COSTS[tid]||200)*0.8);
+    return (PLAYER.shards||0) >= sc || (PLAYER.coins||0) >= cc;
+  });
+
+  if (lockedAndAffordable.length > 0) {
+    flashEl.innerHTML = '<div style="font-size:10px;color:var(--gold);font-family:Orbitron,monospace;letter-spacing:1px;margin-bottom:6px;">⚡ LAST CHANCE DEALS</div>';
+    lockedAndAffordable.slice(0,3).forEach(tid => {
+      const def = TDEFS.find(d=>d.id===tid); if(!def) return;
+      const cc = Math.floor((TOWER_UNLOCK_COSTS[tid]||200)*0.8);
+      const sc = Math.floor((TOWER_UNLOCK_SHARDS[tid]||80)*0.8);
+      flashEl.innerHTML += `
+        <div style="display:flex;align-items:center;gap:8px;padding:6px 8px;background:rgba(245,200,66,.05);border:1px solid rgba(245,200,66,.2);border-radius:6px;">
+          <span style="font-size:18px">${def.icon}</span>
+          <span style="flex:1;font-family:Orbitron,monospace;font-size:9px;color:var(--text)">${def.name}</span>
+          <button onclick="flashDealBuy('${tid}','coins');setupReviveUI()" style="padding:3px 8px;border:1px solid rgba(255,180,0,.4);background:rgba(255,180,0,.07);color:#ffb830;cursor:pointer;border-radius:4px;font-family:Orbitron,monospace;font-size:8px;">🪙${cc}</button>
+          <button onclick="flashDealBuy('${tid}','shards');setupReviveUI()" style="padding:3px 8px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.07);color:var(--cyan);cursor:pointer;border-radius:4px;font-family:Orbitron,monospace;font-size:8px;">💎${sc}</button>
+        </div>`;
+    });
+  } else {
+    flashEl.innerHTML = '';
+  }
+
+  const sb = document.getElementById('revive-shards-btn');
+  const cb = document.getElementById('revive-coins-btn');
+  if (sb) sb.textContent = `💎 REVIVE (${REVIVE_SHARD_COST} shards)`;
+  if (cb) cb.textContent = `🪙 REVIVE (${REVIVE_COIN_COST} coins)`;
+  if (sb) sb.style.opacity = (PLAYER.shards||0) >= REVIVE_SHARD_COST ? '1' : '0.35';
+  if (cb) cb.style.opacity = (PLAYER.coins||0)  >= REVIVE_COIN_COST  ? '1' : '0.35';
+}
+
+function doRevive(currency) {
+  if (currency === 'shards') {
+    if ((PLAYER.shards||0) < REVIVE_SHARD_COST) { toast(`❌ Need 💎${REVIVE_SHARD_COST} shards`); return; }
+    PLAYER.shards -= REVIVE_SHARD_COST; savePlayer(); updateShardDisplays();
+  } else {
+    if ((PLAYER.coins||0) < REVIVE_COIN_COST) { toast(`❌ Need 🪙${REVIVE_COIN_COST} coins`); return; }
+    spendCoins(REVIVE_COIN_COST);
+  }
+  G.reviveCount = (G.reviveCount||0) + 1;
+  const revivedLives = Math.max(3, Math.floor(G.maxLives * 0.35));
+  G.lives = revivedLives;
+  G.gameOver = false;
+  document.getElementById('ov-lose').classList.remove('active');
+  updateHUD();
+  if (!raf) { G.lastTs = 0; loop(0); }
+  G.waveOn = false;
+  document.getElementById('btn-start').textContent = '▶ START';
+  document.getElementById('btn-start').className = 'ctrl-btn primary';
+  toast(`⚡ REVIVED! ${revivedLives} lives remaining. Good luck!`);
+}
+
+// Patch triggerGameOver to show revive UI
+const _origTriggerGameOver = triggerGameOver;
+triggerGameOver = function() {
+  _origTriggerGameOver();
+  setupReviveUI();
+};
+
+// ═══════════════════════════════════════════════════════════════
+// EXPANDED GACHA POOL — new items for role system
+// ═══════════════════════════════════════════════════════════════
+GACHA_POOL.push(
+  // New role-themed relics
+  { id:'relic_ironwall',   type:'relic', rarity:'rare',      icon:'🧱', name:'IRON WALL',     desc:'+3 lives, tanks slow 10% more',  effect:{bonusLives:3} },
+  { id:'relic_eagleeye',   type:'relic', rarity:'rare',      icon:'🦅', name:'EAGLE EYE',     desc:'+20% sniper/laser range',        effect:{rangeM:1.20} },
+  { id:'relic_medpack',    type:'relic', rarity:'rare',      icon:'💉', name:'FIELD MEDIC',   desc:'Gain 1 life every 5 waves',      effect:{waveHeal:5} },
+  { id:'relic_chaincore',  type:'relic', rarity:'epic',      icon:'⚡', name:'CHAIN CORE',    desc:'Tesla chains +2 targets',        effect:{teslaChain:2} },
+  { id:'relic_trapmaster', type:'relic', rarity:'epic',      icon:'🕸️', name:'TRAP MASTER',   desc:'Void Trap cooldown -40%',        effect:{trapCdM:0.6} },
+  { id:'relic_warcommand', type:'relic', rarity:'legendary', icon:'🎖️', name:'WAR COMMAND',   desc:'+20% dmg, +10% range, +2 lives', effect:{dmgM:1.20,rangeM:1.10,bonusLives:2} },
+  { id:'relic_ecoboom',    type:'relic', rarity:'epic',      icon:'💹', name:'ECO BOOM',      desc:'+25% farm income & wave bonus',  effect:{waveBonusM:1.25} },
+  { id:'relic_rolebonus',  type:'relic', rarity:'legendary', icon:'🎭', name:'ROLE MASTERY',  desc:'Role bonus doubled',             effect:{roleMx2:true} },
+  // New skins for 6 new towers
+  { id:'skin_tesla_storm', type:'skin',  rarity:'rare',      icon:'🌩️', name:'STORM TESLA',   desc:'Storm skin for Tesla',           tower:'tesla',    skinIcon:'🌩️' },
+  { id:'skin_sniper_shadow',type:'skin', rarity:'epic',      icon:'🌑', name:'SHADOW SNIPER', desc:'Shadow skin for Sniper',         tower:'sniper',   skinIcon:'🌑' },
+  { id:'skin_bunker_void', type:'skin',  rarity:'rare',      icon:'🌀', name:'VOID BUNKER',   desc:'Void skin for Bunker',           tower:'bunker',   skinIcon:'🌀' },
+  { id:'skin_medic_angel', type:'skin',  rarity:'epic',      icon:'😇', name:'ANGEL MEDIC',   desc:'Angel skin for Medic',           tower:'medic',    skinIcon:'😇' },
+  { id:'skin_trap_nova',   type:'skin',  rarity:'legendary', icon:'🌠', name:'NOVA TRAP',     desc:'Nova skin for Void Trap',        tower:'voidtrap', skinIcon:'🌠' },
+  { id:'skin_barrier_neon',type:'skin',  rarity:'rare',      icon:'💡', name:'NEON BARRIER',  desc:'Neon skin for Barrier',          tower:'barrier',  skinIcon:'💡' },
+  // New augments
+  { id:'aug_tesla_mega',   type:'augment',rarity:'epic',     icon:'⚡', name:'MEGA CHAIN',    desc:'Tesla chains +3 extra targets',  ability:'storm',  aug:{targetAdd:6} },
+  { id:'aug_freeze_storm', type:'augment',rarity:'rare',     icon:'🌨️', name:'BLIZZARD',      desc:'Freeze lasts +5s extra',         ability:'freeze', aug:{durationAdd:5} },
+  { id:'aug_nuke_void',    type:'augment',rarity:'legendary',icon:'☢️', name:'VOID NUKE',     desc:'Nuke deals 3× damage',           ability:'nuke',   aug:{dmgM:3.0} },
+  { id:'aug_goldrush_mp',  type:'augment',rarity:'epic',     icon:'💰', name:'COIN RUSH',     desc:'Gold rush also earns 50 coins',  ability:'goldrush',aug:{coinBonus:50} }
+);
+
+// ═══════════════════════════════════════════════════════════════
+// MP ACHIEVEMENTS (added to ACHIEVEMENTS array)
+// ═══════════════════════════════════════════════════════════════
+ACHIEVEMENTS.push(
+  { id:'mp_first',      icon:'🤝', name:'FIRST CONTACT',  desc:'Play your first multiplayer game',   cond:p=>(p.mpGames||0)>=1,         reward:150 },
+  { id:'mp_win_hard',   icon:'🏰', name:'FORTRESS',       desc:'Win MP on Hard or Nightmare',        cond:p=>(p.mpHardWins||0)>=1,      reward:400 },
+  { id:'mp_chat50',     icon:'💬', name:'COMMS OFFICER',  desc:'Send 50 chat messages total',        cond:p=>(p.chatCount||0)>=50,      reward:200 },
+  { id:'mp_cash5k',     icon:'💰', name:'POOLED POWER',   desc:'Reach $5,000 pooled cash in one game',cond:p=>(p.mpMaxCash||0)>=5000,   reward:300 },
+  { id:'mp_host10',     icon:'🌐', name:'SERVER HOST',    desc:'Host 10 public servers',             cond:p=>(p.publicHosted||0)>=10,   reward:350 },
+  { id:'mp_win25',      icon:'👑', name:'CO-OP LEGEND',   desc:'Win 25 multiplayer games',           cond:p=>(p.mpWins||0)>=25,         reward:800 },
+  { id:'mp_roles',      icon:'🎭', name:'ROLE PLAYER',    desc:'Win a game with 4 different roles',  cond:p=>(p.rolesWon?.length||0)>=4,reward:500 },
+  { id:'role_first',    icon:'⚔️', name:'LOADOUT READY',  desc:'Choose a role for the first time',   cond:p=>p.selectedRole && p.selectedRole!=='allround', reward:80 },
+  { id:'unlock_tower',  icon:'🔓', name:'UNLOCKED',       desc:'Permanently unlock your first tower',cond:p=>Object.keys(p.unlockedTowers||{}).length>=1,    reward:100 },
+  { id:'unlock_all',    icon:'🗝️', name:'ARSENAL',        desc:'Unlock all 6 premium towers',       cond:p=>Object.keys(p.unlockedTowers||{}).length>=6,    reward:600 },
+);
+
+// ═══════════════════════════════════════════════════════════════
+// MULTIPLAYER SYSTEM (PeerJS)
+// ═══════════════════════════════════════════════════════════════
+let mpPeer = null, mpConns = [], mpIsHost = false, mpRoomCode = '', mpPlayers = [], mpVisibility = 'private';
+const MP_COLORS = ['#00e8ff','#39ffa0','#f5c842','#c93eff'];
+const PUBLIC_ROOMS_KEY = 'ws_public_rooms';
+
+function getMPName() {
+  const input = document.getElementById('mp-name-input');
+  return (input?.value?.trim()) || PLAYER.mpName || 'Warrior';
+}
+function saveMPName(val) {
+  PLAYER.mpName = val.trim() || 'Warrior';
+  savePlayer();
+}
+
+function showMultiplayer() {
+  document.getElementById('screen-menu').classList.remove('active');
+  document.getElementById('screen-mp').classList.add('active');
+  const nameInput = document.getElementById('mp-name-input');
+  if (nameInput) nameInput.value = PLAYER.mpName || 'Warrior';
+  // Populate map selector
+  const mapSel = document.getElementById('mp-map-select');
+  if (mapSel && mapSel.options.length === 0) {
+    Object.entries(MAPS).forEach(([key, m]) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = `${m.icon} ${m.name} (${m.diff.toUpperCase()})`;
+      mapSel.appendChild(opt);
+    });
+  }
+  buildRoleRow();
+  refreshServerList();
+}
+
+function setVisibility(v) {
+  mpVisibility = v;
+  document.getElementById('vis-private').classList.toggle('active', v==='private');
+  document.getElementById('vis-public').classList.toggle('active', v==='public');
+  ['vis-private','vis-public'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const isActive = (id==='vis-'+v);
+    el.style.borderColor = isActive ? 'rgba(57,255,160,.4)' : '';
+    el.style.background  = isActive ? 'rgba(57,255,160,.1)' : '';
+    el.style.color       = isActive ? 'var(--green)' : '';
+  });
+}
+
+function loadPeerJS(cb) {
+  if (window.Peer) { cb(); return; }
+  const s = document.createElement('script');
+  s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+  s.onload = cb;
+  document.head.appendChild(s);
+}
+
+function genRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function createRoom() {
+  loadPeerJS(() => {
+    const code = genRoomCode();
+    mpRoomCode = code;
+    mpIsHost = true;
+    mpConns = [];
+    mpPlayers = [{ name: getMPName(), color: MP_COLORS[0], isHost: true }];
+
+    mpPeer = new Peer('wsroom-'+code, { debug: 0 });
+    mpPeer.on('open', () => {
+      document.getElementById('mp-room-created').style.display = '';
+      document.getElementById('mp-room-code-display').textContent = code;
+      updateMPPlayerList();
+      toast(`🏠 Room ${code} created!`);
+
+      if (mpVisibility === 'public') {
+        registerPublicRoom(code);
+        PLAYER.publicHosted = (PLAYER.publicHosted||0)+1;
+        savePlayer(); checkAchievements();
+      }
+    });
+
+    mpPeer.on('connection', conn => {
+      if (mpPlayers.length >= 4) { conn.close(); return; }
+      conn.on('open', () => {
+        mpConns.push(conn);
+        conn.send({ type:'welcome', players: mpPlayers, room: code });
+        conn.on('data', d => handleMPData(d, conn));
+        conn.on('close', () => {
+          mpConns = mpConns.filter(c=>c!==conn);
+          mpPlayers = mpPlayers.filter(p=>p.connId!==conn.peer);
+          updateMPPlayerList();
+          broadcastMPData({ type:'players_update', players: mpPlayers });
+        });
+      });
+    });
+
+    mpPeer.on('error', err => toast('❌ Room error: '+err.type));
+  });
+}
+
+function joinRoom() {
+  const code = document.getElementById('mp-join-code').value.trim().toUpperCase();
+  if (code.length !== 6) { toast('❌ Enter a 6-character code'); return; }
+  loadPeerJS(() => {
+    mpIsHost = false;
+    mpRoomCode = code;
+    if (mpPeer) mpPeer.destroy();
+    mpPeer = new Peer({ debug: 0 });
+
+    mpPeer.on('open', myId => {
+      const conn = mpPeer.connect('wsroom-'+code, { reliable: true });
+      document.getElementById('mp-join-status').textContent = '⏳ Connecting…';
+
+      conn.on('open', () => {
+        document.getElementById('mp-join-status').textContent = '✅ Connected!';
+        conn.send({ type:'join', name: getMPName() });
+        conn.on('data', d => handleMPData(d, conn));
+        conn.on('close', () => {
+          toast('❌ Disconnected from host');
+          document.getElementById('mp-join-status').textContent = '❌ Disconnected';
+        });
+        mpConns = [conn];
+        toast(`🔗 Joined room ${code}!`);
+      });
+
+      conn.on('error', () => {
+        document.getElementById('mp-join-status').textContent = '❌ Room not found';
+        toast('❌ Could not connect to room '+code);
+      });
+    });
+  });
+}
+
+function handleMPData(data, conn) {
+  switch(data.type) {
+    case 'welcome':
+      mpPlayers = data.players;
+      // Assign color
+      const idx = mpPlayers.length;
+      const me = { name: getMPName(), color: MP_COLORS[Math.min(idx, MP_COLORS.length-1)], connId: mpPeer?.id };
+      mpPlayers.push(me);
+      conn.send({ type:'player_join', player: me });
+      updateMPPlayerList();
+      break;
+    case 'player_join':
+      if (mpIsHost) {
+        data.player.connId = conn.peer;
+        mpPlayers.push(data.player);
+        updateMPPlayerList();
+        broadcastMPData({ type:'players_update', players: mpPlayers });
+      }
+      break;
+    case 'players_update':
+      mpPlayers = data.players;
+      updateMPPlayerList();
+      break;
+    case 'start_game':
+      // Guest receives start command
+      if (!mpIsHost) mpStartGameAsGuest(data);
+      break;
+    case 'game_state':
+      if (!mpIsHost) applyMPGameState(data.state);
+      break;
+    case 'input':
+      if (mpIsHost) processMPInput(data, conn);
+      break;
+    case 'chat':
+      appendChatMessage(data.name, data.text, data.color);
+      if (mpIsHost) broadcastMPData(data);
+      break;
+    case 'cash_delta':
+      if (mpIsHost) { G.cash = Math.max(0, G.cash + data.amount); updateHUD(); }
+      break;
+  }
+}
+
+function broadcastMPData(data) {
+  mpConns.forEach(c => { try { c.send(data); } catch(e){} });
+}
+
+function updateMPPlayerList() {
+  const el = document.getElementById('mp-player-list');
+  if (!el) return;
+  el.innerHTML = mpPlayers.map((p,i) => `
+    <div class="mp-player-pill" style="color:${p.color};border-color:${p.color}40;">
+      ${i===0?'👑':'👤'} ${p.name}${p.isHost?' (HOST)':''}
+    </div>
+  `).join('');
+  // Also update in-game player list
+  const ingame = document.getElementById('mp-chat-players');
+  if (ingame) ingame.innerHTML = el.innerHTML;
+}
+
+function mpStartGame() {
+  if (!mpIsHost) return;
+  const mapKey = document.getElementById('mp-map-select')?.value || Object.keys(MAPS)[0];
+  const diff   = document.getElementById('mp-diff-select')?.value || 'normal';
+  const mode   = selMode || 'casual';
+  // Also open loadout screen for the host before starting
+  _mpPendingStart = { mapKey, diff, mode };
+  openLoadout(mapKey);
+}
+
+function mpStartGameAsHost(data) {
+  G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
+  startGame(data.mapKey || selMap || Object.keys(MAPS)[0]);
+  showMPChatTab();
+  // Start broadcasting state
+  G.mpBroadcastTimer = 0;
+}
+
+function mpStartGameAsGuest(data) {
+  G.isMP = true; G.mpHost = false; G.mpPlayers = mpPlayers;
+  showMPChatTab();
+  startGame(data.mapKey || Object.keys(MAPS)[0]);
+  PLAYER.mpGames = (PLAYER.mpGames||0)+1; savePlayer(); checkAchievements();
+}
+
+function processMPInput(data, conn) {
+  switch(data.action) {
+    case 'place':   placeTower(data.c, data.r);  break;
+    case 'sell':    const tw=G.towers.find(t=>t.c===data.c&&t.r===data.r); if(tw){G.selPlaced=tw;doSell();} break;
+    case 'upgrade': const tw2=G.towers.find(t=>t.c===data.c&&t.r===data.r); if(tw2){G.selPlaced=tw2;doUpgrade();} break;
+    case 'ability': useAbility(data.id); break;
+  }
+}
+
+function applyMPGameState(state) {
+  if (!state) return;
+  G.cash  = state.cash;
+  G.lives = state.lives;
+  G.score = state.score;
+  G.kills = state.kills;
+  G.wave  = state.wave;
+  G.waveOn= state.waveOn;
+  G.towers= state.towers;
+  G.enemies=(state.enemies||[]).map(e=>({...e}));
+  updateHUD();
+}
+
+// Broadcast state from host each frame (throttled) — patch via game state broadcast in update
+const _mpBroadcast = function(rawDt) {
+  if (!G.isMP || !G.mpHost) return;
+  G.mpBroadcastTimer = (G.mpBroadcastTimer||0) + rawDt;
+  if (G.mpBroadcastTimer < 0.1) return;
+  G.mpBroadcastTimer = 0;
+  if (G.cash > (PLAYER.mpMaxCash||0)) { PLAYER.mpMaxCash = G.cash; savePlayer(); checkAchievements(); }
+  if (mpPlayers.length > 1 && !G._mpIncomeApplied) {
+    G._mpIncomeApplied = true;
+    const bonus = (mpPlayers.length - 1) * 0.20;
+    G.relicFx = G.relicFx||{};
+    G.relicFx.waveBonusM = ((G.relicFx.waveBonusM||1)) * (1 + bonus);
+  }
+  broadcastMPData({ type:'game_state', state:{
+    cash:G.cash, lives:G.lives, score:G.score, kills:G.kills,
+    wave:G.wave, waveOn:G.waveOn,
+    towers:G.towers.map(t=>({...t})),
+    enemies:G.enemies.filter(e=>!e.dead).map(e=>({
+      type:e.type, x:e.x, y:e.y, hp:e.hp, maxHp:e.maxHp,
+      wpi:e.wpi, prog:e.prog, dead:e.dead, frozen:e.frozen, burning:e.burning
+    }))
+  }});
+};
+
+// Patch update to include MP broadcast
+const _origUpdateWithMP = update;
+update = function(dt, rdt) {
+  _origUpdateWithMP(dt, rdt);
+  _mpBroadcast(rdt);
+};
+
+function showMPChatTab() {
+  const btn = document.getElementById('tab-chat-btn');
+  const pane = document.getElementById('tab-chat');
+  if (btn) btn.style.display = '';
+  if (pane) pane.style.display = 'flex';
+}
+
+function sendChat() {
+  const input = document.getElementById('mp-chat-input');
+  if (!input || !input.value.trim()) return;
+  const text = input.value.trim();
+  input.value = '';
+  const myPlayer = mpPlayers.find((_,i)=> mpIsHost ? i===0 : true) || { name: getMPName(), color: MP_COLORS[mpIsHost?0:1] };
+  const msg = { type:'chat', name: myPlayer.name, text, color: myPlayer.color };
+  appendChatMessage(msg.name, msg.text, msg.color);
+  if (mpIsHost) broadcastMPData(msg);
+  else if (mpConns[0]) try { mpConns[0].send(msg); } catch(e){}
+  PLAYER.chatCount = (PLAYER.chatCount||0)+1; savePlayer(); checkAchievements();
+}
+
+function appendChatMessage(name, text, color) {
+  const log = document.getElementById('mp-chat-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="cm-name" style="color:${color||'var(--cyan)'}">${name}: </span><span class="cm-text">${text}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  // Limit to last 80 messages
+  while (log.children.length > 80) log.removeChild(log.firstChild);
+}
+
+// Public server registry (uses localStorage as simple broadcast — works on same browser, demo)
+function registerPublicRoom(code) {
+  try {
+    const rooms = JSON.parse(localStorage.getItem(PUBLIC_ROOMS_KEY)||'[]');
+    const entry = { code, host: getMPName(), map: selMap||'?', diff: selDiff||'normal', players:1, ts: Date.now() };
+    const filtered = rooms.filter(r=>r.code!==code && Date.now()-r.ts < 300000); // 5min TTL
+    filtered.push(entry);
+    localStorage.setItem(PUBLIC_ROOMS_KEY, JSON.stringify(filtered.slice(-20)));
+  } catch(e){}
+}
+
+function refreshServerList() {
+  const el = document.getElementById('mp-server-list');
+  if (!el) return;
+  try {
+    const rooms = JSON.parse(localStorage.getItem(PUBLIC_ROOMS_KEY)||'[]')
+      .filter(r => Date.now()-r.ts < 300000);
+    if (!rooms.length) {
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;letter-spacing:2px;padding:20px;">NO PUBLIC SERVERS FOUND</div>';
+      return;
+    }
+    el.innerHTML = rooms.map(r=>`
+      <div class="mp-server-row">
+        <div>
+          <div class="sr-name">👤 ${r.host}'s server</div>
+          <div class="sr-info">${(MAPS[r.map]?.icon||'🗺️')} ${r.map.toUpperCase()} · ${r.diff.toUpperCase()} · ${r.players}/4 players</div>
+        </div>
+        <button class="sr-join" onclick="quickJoin('${r.code}')">JOIN</button>
+      </div>
+    `).join('');
+  } catch(e) {
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;padding:20px;">Error loading servers</div>';
+  }
+}
+
+function quickJoin(code) {
+  document.getElementById('mp-join-code').value = code;
+  joinRoom();
+}
+
+// ═══════════════════════════════════════════════════════════════
+// MP-ONLY ABILITIES (unlocked mid-match at wave milestones)
+// ═══════════════════════════════════════════════════════════════
+const MP_ABILITIES = [
+  { id:'overcharge', name:'OVERCHARGE', icon:'⚡', maxUses:2, cdSecs:45, unlockWave:5,  desc:'All towers +50% fire rate for 8s' },
+  { id:'rally',      name:'RALLY',      icon:'🛡️', maxUses:3, cdSecs:35, unlockWave:10, desc:'Restore 1 life per player alive' },
+  { id:'vortex',     name:'VORTEX',     icon:'🌀', maxUses:2, cdSecs:50, unlockWave:15, desc:'Pull all enemies back 30% of path' },
+  { id:'swarmlink',  name:'SWARM LINK', icon:'👥', maxUses:2, cdSecs:60, unlockWave:20, desc:'Each player\'s towers +15% dmg' },
+  { id:'voidpulse',  name:'VOID PULSE', icon:'☢️', maxUses:1, cdSecs:90, unlockWave:25, desc:'Massive AoE, scales with player count' },
+];
+
+// Win/loss MP tracking handled in recordWin patch below
+
+// useAbility MP patch is defined above in the MP-only abilities section
+
+// ═══════════════════════════════════════════════════════════════
+// WIN/LOSS MP TRACKING
+// ═══════════════════════════════════════════════════════════════
+const _origRecordWin = recordWin;
+recordWin = function() {
+  _origRecordWin();
+  if (G.isMP) {
+    PLAYER.mpWins = (PLAYER.mpWins||0)+1;
+    if (G.diffKey==='hard'||G.diffKey==='nightmare') PLAYER.mpHardWins=(PLAYER.mpHardWins||0)+1;
+    // Track role wins
+    const role = PLAYER.selectedRole||'allround';
+    if (!PLAYER.rolesWon) PLAYER.rolesWon=[];
+    if (!PLAYER.rolesWon.includes(role)) PLAYER.rolesWon.push(role);
+    savePlayer(); checkAchievements();
+  }
+};
+
+// ═══════════════════════════════════════════════════════════════
+// INIT: patch tab system for chat tab
+// ═══════════════════════════════════════════════════════════════
+document.getElementById('panel-tabs')?.querySelectorAll('.panel-tab').forEach(tab=>{
+  tab.addEventListener('click',()=>{
+    document.querySelectorAll('.panel-tab').forEach(t=>t.classList.remove('active'));
+    document.querySelectorAll('.tab-pane').forEach(p=>p.classList.remove('active'));
+    tab.classList.add('active');
+    const pane = document.getElementById('tab-'+tab.dataset.tab);
+    if (pane) { pane.style.display='flex'; pane.classList.add('active'); }
+  });
+});
+
+// ── Enemy count + MP player count in HUD ─────────────────────
+{
+  const _prev = updateHUD;
+  updateHUD = function() {
+    _prev();
+    const waveVal = document.getElementById('hud-wave');
+    if (waveVal && G.waveOn) {
+      const alive = (G.enemies||[]).filter(e=>!e.dead).length;
+      const pending = G.spawnQ?.length || 0;
+      waveVal.textContent = `${G.wave}/${G.totalWaves} · ${alive+pending} left`;
+    }
+    // In MP: show player count instead of coins
+    if (G.isMP) {
+      const coEl = document.getElementById('hud-coins');
+      if (coEl) coEl.textContent = `👥${(G.mpPlayers||[]).length}`;
+    }
+  };
+}
+
+// ── Kill streak announcer ─────────────────────────────────────
+const KILL_STREAK_MSGS = [
+  [5,  '⚡ KILLING SPREE!',   '#ffcc00'],
+  [10, '🔥 DOMINATING!',      '#ff8800'],
+  [15, '💥 RAMPAGE!',         '#ff4400'],
+  [20, '☠️ UNSTOPPABLE!',     '#ff0044'],
+  [25, '🌀 GODLIKE!',         '#cc00ff'],
+  [30, '👑 BEYOND GODLIKE!',  '#ff00ff'],
+];
+let _killStreakCount = 0, _killStreakTimer = 0;
+
+// ── Wave milestone bonus cash ─────────────────────────────────
+const WAVE_MILESTONES = {
+  10:  { msg:'🏆 WAVE 10 BONUS!',  cash:200,  shards:5  },
+  20:  { msg:'🏆 WAVE 20 BONUS!',  cash:400,  shards:10 },
+  30:  { msg:'🏆 WAVE 30 BONUS!',  cash:700,  shards:18 },
+  40:  { msg:'🏆 WAVE 40 BONUS!',  cash:1000, shards:25 },
+  50:  { msg:'💀 WAVE 50 BONUS!',  cash:1500, shards:40 },
+  75:  { msg:'💀 WAVE 75 BONUS!',  cash:2500, shards:60 },
+  100: { msg:'👑 WAVE 100 BONUS!', cash:5000, shards:100},
+};
+
+// ── Rage mode: combo 20+ buffs all towers temporarily ─────────
+let _rageModeActive = false;
+
+// Patch applyDmg to track kill streak
+function showKillStreakBanner(msg, col) {
+  const el = document.getElementById('wave-announce');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = col;
+  el.style.display = 'block';
+  el.style.animation = 'none'; void el.offsetWidth;
+  el.style.animation = 'wann 2s ease-out forwards';
+  setTimeout(() => { el.style.display='none'; }, 2100);
+}
+
+function activateRageMode() {
+  _rageModeActive = true;
+  toast('😡 RAGE MODE! +30% dmg for 10s!');
+  G.towers.forEach(tw => { tw._preRageDmg = tw.dmg; tw.dmg *= 1.30; });
+  showKillStreakBanner('😡 RAGE MODE ACTIVATED!', '#ff2200');
+  setTimeout(() => {
+    G.towers.forEach(tw => { if (tw._preRageDmg) { tw.dmg = tw._preRageDmg; delete tw._preRageDmg; } });
+    _rageModeActive = false;
+  }, 10000);
+}
+
+const BONUS_EVENTS = [
+  { msg:'💰 BONUS GOLD WAVE! +$300',          fn: () => { G.cash += 300; updateHUD(); } },
+  { msg:'⚡ POWER SURGE! 5s double fire rate', fn: () => { G.towers.forEach(tw=>{tw._ps=tw.rate;tw.rate*=0.5;}); setTimeout(()=>G.towers.forEach(tw=>{if(tw._ps){tw.rate=tw._ps;delete tw._ps;}}),5000); } },
+  { msg:'💎 SHARD RAIN! +15 shards',           fn: () => { PLAYER.shards+=15; savePlayer(); updateShardDisplays(); } },
+  { msg:'🛡️ SHIELD BLESSING! +2 lives',       fn: () => { G.lives=Math.min(G.lives+2,G.maxLives); updateHUD(); } },
+  { msg:'🪙 COIN BURST! +100 coins',           fn: () => { addCoins(100); } },
+  { msg:'🔥 INFERNO! All enemies burning',      fn: () => { G.enemies.forEach(e=>{if(!e.dead){e.burning=true;e.burnT=5;}}); } },
+  { msg:'❄️ CRYO WAVE! Enemies slowed 50%',    fn: () => { G.enemies.forEach(e=>{if(!e.dead){e.frozen=true;e.frozenT=3;e.spd=e.baseSpd*0.5;}}); } },
+];
+
+DAILY_POOL.push(
+  { id:'mpwin',     icon:'👥', desc:'Win a multiplayer match',               goal:1,   stat:'mpWin',       reward:300 },
+  { id:'revive1',   icon:'⚡', desc:'Use a revive in one run',               goal:1,   stat:'revived',     reward:200 },
+  { id:'coins500',  icon:'🪙', desc:'Earn 500 coins in one session',         goal:500, stat:'coinsEarned', reward:180 },
+  { id:'chain10',   icon:'⚡', desc:'Hit 10 enemies with Tesla chain',       goal:10,  stat:'chainHits',   reward:160 },
+  { id:'noAbility', icon:'🚫', desc:'Win without using any abilities',       goal:1,   stat:'noAbWin',     reward:250 },
+  { id:'wave50',    icon:'🌊', desc:'Survive to wave 50',                    goal:50,  stat:'wave',        reward:400 },
+);
+
+const _applyDmgForExtras = applyDmg;
+applyDmg = function(e, d, special, silent) {
+  // ── Crit chance (5%) ──
+  if (!silent && !special && Math.random() < 0.05 && d > 0) {
+    d *= 2;
+    if (G.floats) G.floats.push({x:e.x, y:e.y-8, txt:'CRIT!', col:'#ffe44d', a:1.5, sz:13});
+  }
+
+  const wasDead = e.dead || e.hp <= 0;
+  _applyDmgForExtras(e, d, special, silent);
+
+  // ── Kill streak tracking ──
+  if (!wasDead && e.dead) {
+    _killStreakCount++;
+    _killStreakTimer = 4.0;
+    const streak = KILL_STREAK_MSGS.find(([n]) => _killStreakCount === n);
+    if (streak) showKillStreakBanner(streak[1], streak[2]);
+    if (G.combo >= 20 && !_rageModeActive) activateRageMode();
+    // Rare coin float flavor
+    if (Math.random() < 0.04 && G.floats)
+      G.floats.push({x:e.x+10, y:e.y-38, txt:'🪙+1', col:'#ffb830', a:1, sz:10});
+  }
+
+  // ── Tesla chain lightning ──
+  if (special === 'chain' && !e._chainHit && G.enemies) {
+    e._chainHit = true;
+    const chainCount = 2 + (G.relicFx?.teslaChain || 0);
+    let bounced = 0;
+    G.enemies.forEach(other => {
+      if (bounced >= chainCount || other.dead || other === e || other._chainHit) return;
+      const dx = other.x - e.x, dy = other.y - e.y;
+      if (dx*dx + dy*dy < (T*3.5)**2) {
+        other._chainHit = true;
+        _applyDmgForExtras(other, d * 0.6, null, false);
+        spawnParticles(other.x, other.y, '#88ddff', 6);
+        bounced++;
+        G._chainHitCount = (G._chainHitCount||0) + 1;
+        updateDailyProgress('chainHits', G._chainHitCount);
+      }
+    });
+    setTimeout(() => { G.enemies.forEach(en => { delete en._chainHit; }); delete e._chainHit; }, 50);
+  }
+};
+
+// Patch update to tick kill streak timer
+const _updateForExtras = update;
+update = function(dt, rdt) {
+  _updateForExtras(dt, rdt);
+  if (_killStreakTimer > 0) {
+    _killStreakTimer -= rdt;
+    if (_killStreakTimer <= 0) _killStreakCount = 0;
+  }
+};
+
+// Patch waveDone — milestone bonuses + medic healing + bonus events + coin awards + MP abilities
+const _waveDoneForAll = waveDone;
+waveDone = function() {
+  _waveDoneForAll();
+
+  // Reset kill streak on wave end
+  _killStreakCount = 0; _killStreakTimer = 0; _rageModeActive = false;
+
+  // Wave milestone cash+shard bonuses
+  const m = WAVE_MILESTONES[G.wave];
+  if (m) {
+    G.cash += m.cash;
+    PLAYER.shards += m.shards;
+    savePlayer(); updateShardDisplays();
+    toast(`${m.msg} +$${m.cash} 💎+${m.shards}`);
+    updateHUD();
+    const el = document.getElementById('hud-cash');
+    if (el) { el.style.textShadow='0 0 20px #ffcc00,0 0 40px #ffcc00'; setTimeout(()=>el.style.textShadow='',1500); }
+  }
+
+  // Medic tower healing
+  G.towers.filter(t=>t.type==='medic').forEach(tw => {
+    const def = TDEFS.find(d=>d.id==='medic');
+    const interval = tw.tier > 0 ? (def.upgrades[tw.tier-1]?.healWaves || 3) : 3;
+    if (G.wave % interval === 0) {
+      G.lives = Math.min(G.lives + 1, G.maxLives);
+      if (G.floats) G.floats.push({x:tw.c*T+T/2, y:tw.r*T+T/2-20, txt:'💊+1♥', col:'#ff88aa', a:1.5, sz:12});
+    }
+  });
+
+  // Random bonus event every 7 waves (not on milestone waves)
+  if (G.wave > 0 && G.wave % 7 === 0 && !WAVE_MILESTONES[G.wave]) {
+    const ev = BONUS_EVENTS[Math.floor(Math.random() * BONUS_EVENTS.length)];
+    setTimeout(() => { ev.fn(); toast(ev.msg); }, 600);
+  }
+
+  // MP ability unlocks
+  if (G.isMP) {
+    MP_ABILITIES.forEach(mab => {
+      if (G.wave >= mab.unlockWave && !G.abilities.find(a=>a.id===mab.id)) {
+        G.abilities.push({ ...mab, uses: mab.maxUses, cd: 0 });
+        toast(`⚡ MP ABILITY UNLOCKED: ${mab.icon} ${mab.name}!`);
+        buildAbilitiesPanel();
+      }
+    });
+    PLAYER.mpGames = (PLAYER.mpGames||0) + 1; savePlayer();
+  }
+
+  updateHUD();
+};
+
+// Patch triggerWin — daily + coins
+const _triggerWinForAll = triggerWin;
+triggerWin = function() {
+  _triggerWinForAll();
+  if ((G.abilitiesUsed||0) === 0) updateDailyProgress('noAbWin', 1);
+  if (G.isMP) updateDailyProgress('mpWin', 1);
+  addCoins(Math.floor(50 + G.wave * 3));
+  updateCoinDisplays();
+};
+
+// Patch doRevive — daily tracking
+const _doReviveForAll = doRevive;
+doRevive = function(currency) {
+  _doReviveForAll(currency);
+  updateDailyProgress('revived', 1);
+};
+
+// ── Coins display in collection screen ───────────────────────
+// Add coins display next to shards in the collection screen header
+(function() {
+  const collHeader = document.querySelector('#collection-content > div');
+  if (collHeader && !document.getElementById('coll-coins')) {
+    const coinsDiv = document.createElement('div');
+    coinsDiv.style.cssText = 'display:flex;align-items:center;gap:6px;background:rgba(255,180,0,.07);border:1px solid var(--border2);border-radius:var(--radius);padding:5px 12px;';
+    coinsDiv.innerHTML = '<span style="color:#ffb830;font-size:14px">🪙</span><span id="coll-coins" class="coin-display" style="font-family:Orbitron,monospace;font-size:16px;font-weight:900;color:#ffb830">0</span><span style="font-size:9px;letter-spacing:2px;color:var(--text3);font-family:Orbitron,monospace">COINS</span>';
+    // Insert after shards display
+    const shardsEl = collHeader.querySelector('[id="coll-shards"]')?.parentElement;
+    if (shardsEl) shardsEl.after(coinsDiv);
+    else collHeader.appendChild(coinsDiv);
+  }
+  updateCoinDisplays();
+})();
+
+// ═══════════════════════════════════════════════════════════════
+// BOOTSTRAP
+// ═══════════════════════════════════════════════════════════════
+updateCoinDisplays();
 buildMapGrid();
 updateShardDisplays();
 startMenuParticles();
 refreshDailyBar();
+
 </script>
 </body>
 </html>
