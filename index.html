@@ -6171,6 +6171,42 @@ function updateMPPlayerList() {
     : '▶ START GAME (waiting for players…)';
 }
 
+function showMultiplayer() {
+  document.getElementById('screen-menu').classList.remove('active');
+  document.getElementById('screen-mp').classList.add('active');
+  const nameInput = document.getElementById('mp-name-input');
+  if (nameInput) nameInput.value = PLAYER.mpName || 'Warrior';
+  // Reset guest lobby visibility
+  const guestLobby = document.getElementById('mp-guest-lobby');
+  if (guestLobby) guestLobby.style.display = 'none';
+  const joinStatus = document.getElementById('mp-join-status');
+  if (joinStatus) joinStatus.textContent = '';
+  // Populate map selector
+  const mapSel = document.getElementById('mp-map-select');
+  if (mapSel && mapSel.options.length === 0) {
+    Object.entries(MAPS).forEach(([key, m]) => {
+      const opt = document.createElement('option');
+      opt.value = key;
+      opt.textContent = `${m.icon} ${m.name} (${m.diff.toUpperCase()})`;
+      mapSel.appendChild(opt);
+    });
+  }
+  buildRoleRow();
+  refreshServerList();
+}
+
+function setVisibility(v) {
+  mpVisibility = v;
+  ['private','public'].forEach(vis => {
+    const el = document.getElementById('vis-' + vis);
+    if (!el) return;
+    const active = vis === v;
+    el.style.borderColor = active ? 'rgba(57,255,160,.4)' : 'var(--border2)';
+    el.style.background  = active ? 'rgba(57,255,160,.1)' : 'var(--bg2)';
+    el.style.color       = active ? 'var(--green)'        : 'var(--text2)';
+  });
+}
+
 // ── PeerJS loader ─────────────────────────────────────────────
 function loadPeerJS(cb) {
   if (window.Peer) { cb(); return; }
