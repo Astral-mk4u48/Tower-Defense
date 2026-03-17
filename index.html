@@ -1501,6 +1501,12 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
           <button onclick="joinRoom()" style="width:100%;padding:11px;border:1px solid var(--cyan);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">🔗 JOIN SERVER</button>
         </div>
         <div id="mp-join-status" style="margin-top:10px;font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;text-align:center;min-height:18px;"></div>
+        <!-- Guest lobby — shown after joining -->
+        <div id="mp-guest-lobby" style="display:none;margin-top:14px;text-align:center;">
+          <div style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:8px;">PLAYERS IN ROOM</div>
+          <div id="mp-player-list-guest" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
+          <div style="font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;">⏳ Waiting for host to start…</div>
+        </div>
       </div>
     </div>
 
@@ -6115,178 +6121,230 @@ ACHIEVEMENTS.push(
 // ═══════════════════════════════════════════════════════════════
 // MULTIPLAYER SYSTEM (PeerJS)
 // ═══════════════════════════════════════════════════════════════
-let mpPeer = null, mpConns = [], mpIsHost = false, mpRoomCode = '', mpPlayers = [], mpVisibility = 'private';
+// ═══════════════════════════════════════════════════════════════
+// MULTIPLAYER SYSTEM — clean rewrite
+// ═══════════════════════════════════════════════════════════════
+let mpPeer = null, mpConns = [], mpIsHost = false, mpRoomCode = '';
+let mpPlayers = [], mpVisibility = 'private';
 const MP_COLORS = ['#00e8ff','#39ffa0','#f5c842','#c93eff'];
 const PUBLIC_ROOMS_KEY = 'ws_public_rooms';
 
 function getMPName() {
-  const input = document.getElementById('mp-name-input');
-  return (input?.value?.trim()) || PLAYER.mpName || 'Warrior';
+  const v = document.getElementById('mp-name-input')?.value?.trim();
+  return v || PLAYER.mpName || 'Warrior';
 }
 function saveMPName(val) {
   PLAYER.mpName = val.trim() || 'Warrior';
   savePlayer();
 }
 
-function showMultiplayer() {
-  document.getElementById('screen-menu').classList.remove('active');
-  document.getElementById('screen-mp').classList.add('active');
-  const nameInput = document.getElementById('mp-name-input');
-  if (nameInput) nameInput.value = PLAYER.mpName || 'Warrior';
-  // Populate map selector
-  const mapSel = document.getElementById('mp-map-select');
-  if (mapSel && mapSel.options.length === 0) {
-    Object.entries(MAPS).forEach(([key, m]) => {
-      const opt = document.createElement('option');
-      opt.value = key;
-      opt.textContent = `${m.icon} ${m.name} (${m.diff.toUpperCase()})`;
-      mapSel.appendChild(opt);
-    });
+// ── Lobby helpers ─────────────────────────────────────────────
+function mpLog(msg) {
+  // Show status in both join status and toast
+  const el = document.getElementById('mp-join-status');
+  if (el) el.textContent = msg;
+}
+
+function updateMPPlayerList() {
+  const html = mpPlayers.map((p, i) => `
+    <div class="mp-player-pill" style="color:${p.color};border-color:${p.color}44;background:${p.color}11;margin:2px 0;">
+      ${i === 0 ? '👑' : '👤'} ${p.name}${p.isHost ? ' (HOST)' : ''}
+    </div>
+  `).join('');
+  // Host lobby list
+  const lobby = document.getElementById('mp-player-list');
+  if (lobby) lobby.innerHTML = html;
+  // Guest lobby list + show section
+  const guestLobby = document.getElementById('mp-player-list-guest');
+  if (guestLobby) guestLobby.innerHTML = html;
+  if (!mpIsHost && mpPlayers.length > 0) {
+    const sec = document.getElementById('mp-guest-lobby');
+    if (sec) sec.style.display = '';
   }
-  buildRoleRow();
-  refreshServerList();
+  // In-game chat player list
+  const ingame = document.getElementById('mp-chat-players');
+  if (ingame) ingame.innerHTML = html;
+  // Start button
+  const startBtn = document.getElementById('mp-start-btn');
+  if (startBtn) startBtn.textContent = mpPlayers.length > 1
+    ? `▶ START GAME (${mpPlayers.length} players)`
+    : '▶ START GAME (waiting for players…)';
 }
 
-function setVisibility(v) {
-  mpVisibility = v;
-  document.getElementById('vis-private').classList.toggle('active', v==='private');
-  document.getElementById('vis-public').classList.toggle('active', v==='public');
-  ['vis-private','vis-public'].forEach(id=>{
-    const el=document.getElementById(id);
-    if(!el) return;
-    const isActive = (id==='vis-'+v);
-    el.style.borderColor = isActive ? 'rgba(57,255,160,.4)' : '';
-    el.style.background  = isActive ? 'rgba(57,255,160,.1)' : '';
-    el.style.color       = isActive ? 'var(--green)' : '';
-  });
-}
-
+// ── PeerJS loader ─────────────────────────────────────────────
 function loadPeerJS(cb) {
   if (window.Peer) { cb(); return; }
   const s = document.createElement('script');
   s.src = 'https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
-  s.onload = cb;
+  s.onload = () => { setTimeout(cb, 100); };
+  s.onerror = () => toast('❌ Could not load PeerJS — check your internet');
   document.head.appendChild(s);
 }
 
 function genRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  return Array.from({length:6}, ()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+  return Array.from({length:6}, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[Math.floor(Math.random()*32)]).join('');
 }
 
+// ── CREATE ROOM (host) ─────────────────────────────────────────
 function createRoom() {
+  if (mpPeer) { mpPeer.destroy(); mpPeer = null; }
   loadPeerJS(() => {
     const code = genRoomCode();
     mpRoomCode = code;
     mpIsHost = true;
     mpConns = [];
-    mpPlayers = [{ name: getMPName(), color: MP_COLORS[0], isHost: true }];
+    mpPlayers = [{ id: 'host', name: getMPName(), color: MP_COLORS[0], isHost: true }];
 
-    mpPeer = new Peer('wsroom-'+code, { debug: 0 });
-    mpPeer.on('open', () => {
+    // Use the code as peer ID so guests can connect by code
+    mpPeer = new Peer('wsroom-' + code, { debug: 1 });
+
+    mpPeer.on('open', id => {
       document.getElementById('mp-room-created').style.display = '';
       document.getElementById('mp-room-code-display').textContent = code;
       updateMPPlayerList();
-      toast(`🏠 Room ${code} created!`);
+      toast('🏠 Room ' + code + ' ready! Share this code.');
 
       if (mpVisibility === 'public') {
         registerPublicRoom(code);
-        PLAYER.publicHosted = (PLAYER.publicHosted||0)+1;
+        PLAYER.publicHosted = (PLAYER.publicHosted||0) + 1;
         savePlayer(); checkAchievements();
       }
     });
 
+    // A guest connected
     mpPeer.on('connection', conn => {
       if (mpPlayers.length >= 4) { conn.close(); return; }
+
       conn.on('open', () => {
-        mpConns.push(conn);
-        conn.send({ type:'welcome', players: mpPlayers, room: code });
-        conn.on('data', d => handleMPData(d, conn));
-        conn.on('close', () => {
-          mpConns = mpConns.filter(c=>c!==conn);
-          mpPlayers = mpPlayers.filter(p=>p.connId!==conn.peer);
-          updateMPPlayerList();
-          broadcastMPData({ type:'players_update', players: mpPlayers });
+        conn.on('data', data => {
+          if (data.type === 'join') {
+            // Register this player
+            const idx = mpPlayers.length;
+            const player = {
+              id: conn.peer,
+              name: data.name || 'Warrior',
+              color: MP_COLORS[Math.min(idx, MP_COLORS.length - 1)],
+              isHost: false
+            };
+            mpPlayers.push(player);
+            mpConns.push(conn);
+
+            // Tell everyone the updated list
+            broadcastMPData({ type: 'players_update', players: mpPlayers });
+            // Also send directly to the new joiner (they may not be in broadcast yet)
+            try { conn.send({ type: 'players_update', players: mpPlayers }); } catch(e){}
+
+            updateMPPlayerList();
+            toast('👤 ' + player.name + ' joined!');
+          }
+          // Relay all other data types through normal handler
+          else handleMPData(data, conn);
         });
+
+        conn.on('close', () => {
+          const p = mpPlayers.find(p => p.id === conn.peer);
+          if (p) toast('👤 ' + p.name + ' left');
+          mpConns = mpConns.filter(c => c !== conn);
+          mpPlayers = mpPlayers.filter(p => p.id !== conn.peer);
+          updateMPPlayerList();
+          broadcastMPData({ type: 'players_update', players: mpPlayers });
+        });
+
+        conn.on('error', err => console.warn('conn error', err));
       });
     });
 
-    mpPeer.on('error', err => toast('❌ Room error: '+err.type));
+    mpPeer.on('error', err => {
+      toast('❌ Host error: ' + err.type);
+      console.error('PeerJS host error', err);
+    });
   });
 }
 
+// ── JOIN ROOM (guest) ──────────────────────────────────────────
 function joinRoom() {
-  const code = document.getElementById('mp-join-code').value.trim().toUpperCase();
-  if (code.length !== 6) { toast('❌ Enter a 6-character code'); return; }
+  const code = (document.getElementById('mp-join-code')?.value || '').trim().toUpperCase();
+  if (code.length !== 6) { toast('❌ Enter a 6-character room code'); return; }
+
+  if (mpPeer) { mpPeer.destroy(); mpPeer = null; }
+  mpIsHost = false;
+  mpRoomCode = code;
+  mpConns = [];
+
+  mpLog('⏳ Connecting…');
+
   loadPeerJS(() => {
-    mpIsHost = false;
-    mpRoomCode = code;
-    if (mpPeer) mpPeer.destroy();
-    mpPeer = new Peer({ debug: 0 });
+    mpPeer = new Peer({ debug: 1 });
 
     mpPeer.on('open', myId => {
-      const conn = mpPeer.connect('wsroom-'+code, { reliable: true });
-      document.getElementById('mp-join-status').textContent = '⏳ Connecting…';
+      const conn = mpPeer.connect('wsroom-' + code, { reliable: true, serialization: 'json' });
 
       conn.on('open', () => {
-        document.getElementById('mp-join-status').textContent = '✅ Connected!';
-        conn.send({ type:'join', name: getMPName() });
-        conn.on('data', d => handleMPData(d, conn));
-        conn.on('close', () => {
-          toast('❌ Disconnected from host');
-          document.getElementById('mp-join-status').textContent = '❌ Disconnected';
-        });
+        // Introduce ourselves
+        conn.send({ type: 'join', name: getMPName() });
         mpConns = [conn];
-        toast(`🔗 Joined room ${code}!`);
+        mpLog('✅ Joined! Waiting for host…');
+        toast('🔗 Joined room ' + code + '!');
+
+        conn.on('data', data => handleMPData(data, conn));
+
+        conn.on('close', () => {
+          mpLog('❌ Host disconnected');
+          toast('❌ Disconnected from host');
+        });
+
+        conn.on('error', err => {
+          mpLog('❌ Connection error');
+          toast('❌ Connection error: ' + err.type);
+        });
       });
 
       conn.on('error', () => {
-        document.getElementById('mp-join-status').textContent = '❌ Room not found';
-        toast('❌ Could not connect to room '+code);
+        mpLog('❌ Room not found');
+        toast('❌ Room ' + code + ' not found');
       });
+    });
+
+    mpPeer.on('error', err => {
+      mpLog('❌ Error: ' + err.type);
+      toast('❌ ' + err.type);
     });
   });
 }
 
+// ── Message handler ────────────────────────────────────────────
 function handleMPData(data, conn) {
-  switch(data.type) {
-    case 'welcome':
+  switch (data.type) {
+
+    case 'players_update':
+      // Sync the lobby player list on all clients
       mpPlayers = data.players;
-      // Assign color
-      const idx = mpPlayers.length;
-      const me = { name: getMPName(), color: MP_COLORS[Math.min(idx, MP_COLORS.length-1)], connId: mpPeer?.id };
-      mpPlayers.push(me);
-      conn.send({ type:'player_join', player: me });
       updateMPPlayerList();
+      // Show lobby section if guest hasn't seen it yet
+      const lobbySection = document.getElementById('mp-guest-lobby');
+      if (lobbySection) lobbySection.style.display = '';
       break;
-    case 'player_join':
-      if (mpIsHost) {
-        data.player.connId = conn.peer;
-        mpPlayers.push(data.player);
-        updateMPPlayerList();
-        broadcastMPData({ type:'players_update', players: mpPlayers });
+
+    case 'start_game':
+      if (!mpIsHost) {
+        // Apply host's chosen settings
+        selDiff = data.diff || selDiff;
+        selMode = data.mode || selMode;
+        mpStartGameAsGuest(data);
       }
       break;
-    case 'players_update':
-      mpPlayers = data.players;
-      updateMPPlayerList();
-      break;
-    case 'start_game':
-      // Guest receives start command
-      if (!mpIsHost) mpStartGameAsGuest(data);
-      break;
+
     case 'game_state':
       if (!mpIsHost) applyMPGameState(data.state);
       break;
+
     case 'input':
       if (mpIsHost) processMPInput(data, conn);
       break;
+
     case 'chat':
       appendChatMessage(data.name, data.text, data.color);
-      if (mpIsHost) broadcastMPData(data);
-      break;
-    case 'cash_delta':
-      if (mpIsHost) { G.cash = Math.max(0, G.cash + data.amount); updateHUD(); }
+      if (mpIsHost) broadcastMPData(data); // relay to others
       break;
   }
 }
@@ -6295,115 +6353,176 @@ function broadcastMPData(data) {
   mpConns.forEach(c => { try { c.send(data); } catch(e){} });
 }
 
-function updateMPPlayerList() {
-  const el = document.getElementById('mp-player-list');
-  if (!el) return;
-  el.innerHTML = mpPlayers.map((p,i) => `
-    <div class="mp-player-pill" style="color:${p.color};border-color:${p.color}40;">
-      ${i===0?'👑':'👤'} ${p.name}${p.isHost?' (HOST)':''}
-    </div>
-  `).join('');
-  // Also update in-game player list
-  const ingame = document.getElementById('mp-chat-players');
-  if (ingame) ingame.innerHTML = el.innerHTML;
-}
-
+// ── Start game (host) ──────────────────────────────────────────
 function mpStartGame() {
   if (!mpIsHost) return;
   const mapKey = document.getElementById('mp-map-select')?.value || Object.keys(MAPS)[0];
   const diff   = document.getElementById('mp-diff-select')?.value || 'normal';
   const mode   = selMode || 'casual';
-  // Also open loadout screen for the host before starting
   _mpPendingStart = { mapKey, diff, mode };
   openLoadout(mapKey);
 }
 
 function mpStartGameAsHost(data) {
-  G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
-  startGame(data.mapKey || selMap || Object.keys(MAPS)[0]);
-  showMPChatTab();
-  // Start broadcasting state
-  G.mpBroadcastTimer = 0;
-}
-
-function mpStartGameAsGuest(data) {
-  G.isMP = true; G.mpHost = false; G.mpPlayers = mpPlayers;
-  showMPChatTab();
+  // Tell guests to start
+  broadcastMPData({ type: 'start_game', ...data });
+  // Set diff/mode from selection
+  selDiff = data.diff || selDiff;
+  selMode = data.mode || selMode;
+  // Start locally — then set MP flags AFTER initGame runs
   startGame(data.mapKey || Object.keys(MAPS)[0]);
-  PLAYER.mpGames = (PLAYER.mpGames||0)+1; savePlayer(); checkAchievements();
+  G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
+  G._mpIncomeApplied = false;
+  showMPChatTab();
 }
 
-function processMPInput(data, conn) {
-  switch(data.action) {
-    case 'place':   placeTower(data.c, data.r);  break;
-    case 'sell':    const tw=G.towers.find(t=>t.c===data.c&&t.r===data.r); if(tw){G.selPlaced=tw;doSell();} break;
-    case 'upgrade': const tw2=G.towers.find(t=>t.c===data.c&&t.r===data.r); if(tw2){G.selPlaced=tw2;doUpgrade();} break;
-    case 'ability': useAbility(data.id); break;
-  }
+// ── Start game (guest) ─────────────────────────────────────────
+function mpStartGameAsGuest(data) {
+  // Switch away from MP screen to the game
+  document.getElementById('screen-mp').classList.remove('active');
+  // Start the game locally (for rendering)
+  startGame(data.mapKey || Object.keys(MAPS)[0]);
+  // Set MP flags AFTER initGame so they don't get wiped
+  G.isMP = true; G.mpHost = false; G.mpPlayers = mpPlayers;
+  G._mpIncomeApplied = false;
+  // Guests don't run their own wave/enemy logic — pause local wave control
+  G.waveOn = false;
+  // Show chat
+  showMPChatTab();
+  // Update achievements
+  PLAYER.mpGames = (PLAYER.mpGames||0) + 1; savePlayer(); checkAchievements();
+  toast('🎮 Game started! ' + mpPlayers.length + ' players');
 }
 
+// ── Apply host state to guest ──────────────────────────────────
 function applyMPGameState(state) {
-  if (!state) return;
-  G.cash  = state.cash;
-  G.lives = state.lives;
-  G.score = state.score;
-  G.kills = state.kills;
-  G.wave  = state.wave;
-  G.waveOn= state.waveOn;
-  G.towers= state.towers;
-  G.enemies=(state.enemies||[]).map(e=>({...e}));
+  if (!state || !G.mapKey) return;
+  G.cash   = state.cash;
+  G.lives  = state.lives;
+  G.score  = state.score;
+  G.kills  = state.kills;
+  G.wave   = state.wave;
+  G.waveOn = state.waveOn;
+  // Sync towers
+  G.towers = state.towers || [];
+  // Sync enemies
+  G.enemies = (state.enemies || []).map(e => ({
+    ...e,
+    dead: false,
+    frozen: e.frozen || false,
+    burning: e.burning || false,
+    baseSpd: e.spd || 1,
+    prog: e.prog || 0,
+  }));
+  // Sync wave progress bar
+  const fill = document.getElementById('wave-fill');
+  if (fill) fill.style.width = (G.wave / G.totalWaves * 100) + '%';
+  // Update start button state
+  document.getElementById('btn-start').textContent = G.waveOn ? '⏳ WAVE' : '▶ START';
+  document.getElementById('btn-start').className = G.waveOn ? 'ctrl-btn' : 'ctrl-btn primary';
   updateHUD();
 }
 
-// Broadcast state from host each frame (throttled) — patch via game state broadcast in update
+// Guest sends input to host
+function mpSendInput(action, payload) {
+  if (G.isMP && !G.mpHost && mpConns[0]) {
+    try { mpConns[0].send({ type: 'input', action, ...payload }); } catch(e){}
+  }
+}
+
+function processMPInput(data, conn) {
+  const p = mpPlayers.find(p => p.id === conn.peer);
+  switch (data.action) {
+    case 'select_tower':
+      G.selTower = data.towerId;
+      break;
+    case 'place':
+      if (G.selTower) placeTower(data.c, data.r);
+      break;
+    case 'sell': {
+      const tw = G.towers.find(t => t.c===data.c && t.r===data.r);
+      if (tw) { G.selPlaced = tw; doSell(); }
+      break;
+    }
+    case 'upgrade': {
+      const tw = G.towers.find(t => t.c===data.c && t.r===data.r);
+      if (tw) { G.selPlaced = tw; doUpgrade(); }
+      break;
+    }
+    case 'ability':
+      useAbility(data.id);
+      break;
+    case 'start_wave':
+      startWave();
+      break;
+  }
+}
+
+// ── MP broadcast (host → guests every 100ms) ──────────────────
 const _mpBroadcast = function(rawDt) {
-  if (!G.isMP || !G.mpHost) return;
+  if (!G || !G.isMP || !G.mpHost) return;
   G.mpBroadcastTimer = (G.mpBroadcastTimer||0) + rawDt;
   if (G.mpBroadcastTimer < 0.1) return;
   G.mpBroadcastTimer = 0;
-  if (G.cash > (PLAYER.mpMaxCash||0)) { PLAYER.mpMaxCash = G.cash; savePlayer(); checkAchievements(); }
-  if (mpPlayers.length > 1 && !G._mpIncomeApplied) {
-    G._mpIncomeApplied = true;
-    const bonus = (mpPlayers.length - 1) * 0.20;
-    G.relicFx = G.relicFx||{};
-    G.relicFx.waveBonusM = ((G.relicFx.waveBonusM||1)) * (1 + bonus);
+
+  if (G.cash > (PLAYER.mpMaxCash||0)) {
+    PLAYER.mpMaxCash = G.cash; savePlayer(); checkAchievements();
   }
-  broadcastMPData({ type:'game_state', state:{
-    cash:G.cash, lives:G.lives, score:G.score, kills:G.kills,
-    wave:G.wave, waveOn:G.waveOn,
-    towers:G.towers.map(t=>({...t})),
-    enemies:G.enemies.filter(e=>!e.dead).map(e=>({
-      type:e.type, x:e.x, y:e.y, hp:e.hp, maxHp:e.maxHp,
-      wpi:e.wpi, prog:e.prog, dead:e.dead, frozen:e.frozen, burning:e.burning
-    }))
-  }});
+  // Apply income scaling once per game
+  if (!G._mpIncomeApplied && mpPlayers.length > 1) {
+    G._mpIncomeApplied = true;
+    G.relicFx = G.relicFx || {};
+    G.relicFx.waveBonusM = (G.relicFx.waveBonusM||1) * (1 + (mpPlayers.length-1) * 0.20);
+  }
+
+  broadcastMPData({
+    type: 'game_state',
+    state: {
+      cash:   G.cash,
+      lives:  G.lives,
+      score:  G.score,
+      kills:  G.kills,
+      wave:   G.wave,
+      waveOn: G.waveOn,
+      towers: G.towers.map(t => ({
+        c:t.c, r:t.r, type:t.type, tier:t.tier, range:t.range
+      })),
+      enemies: G.enemies.filter(e=>!e.dead).map(e => ({
+        type:e.type, x:e.x, y:e.y, hp:e.hp, maxHp:e.maxHp,
+        spd:e.spd, wpi:e.wpi, prog:e.prog,
+        frozen:e.frozen, burning:e.burning
+      }))
+    }
+  });
 };
 
-// Patch update to include MP broadcast
+// Patch update to broadcast
 const _origUpdateWithMP = update;
 update = function(dt, rdt) {
   _origUpdateWithMP(dt, rdt);
   _mpBroadcast(rdt);
 };
 
+// ── Chat tab ──────────────────────────────────────────────────
 function showMPChatTab() {
-  const btn = document.getElementById('tab-chat-btn');
+  const btn  = document.getElementById('tab-chat-btn');
   const pane = document.getElementById('tab-chat');
-  if (btn) btn.style.display = '';
-  if (pane) pane.style.display = 'flex';
+  if (btn)  { btn.style.display = ''; }
+  if (pane) { pane.style.removeProperty('display'); }
+  appendChatMessage('🎮 SYSTEM', 'Multiplayer session started! ' + mpPlayers.length + ' players connected.', '#39ffa0');
 }
 
 function sendChat() {
   const input = document.getElementById('mp-chat-input');
-  if (!input || !input.value.trim()) return;
+  if (!input?.value.trim()) return;
   const text = input.value.trim();
   input.value = '';
-  const myPlayer = mpPlayers.find((_,i)=> mpIsHost ? i===0 : true) || { name: getMPName(), color: MP_COLORS[mpIsHost?0:1] };
-  const msg = { type:'chat', name: myPlayer.name, text, color: myPlayer.color };
-  appendChatMessage(msg.name, msg.text, msg.color);
+  const me = mpPlayers[mpIsHost ? 0 : mpPlayers.findIndex(p => !p.isHost)] || { name: getMPName(), color: MP_COLORS[1] };
+  const msg = { type:'chat', name: me.name, text, color: me.color };
+  appendChatMessage(me.name, text, me.color);
   if (mpIsHost) broadcastMPData(msg);
   else if (mpConns[0]) try { mpConns[0].send(msg); } catch(e){}
-  PLAYER.chatCount = (PLAYER.chatCount||0)+1; savePlayer(); checkAchievements();
+  PLAYER.chatCount = (PLAYER.chatCount||0) + 1; savePlayer(); checkAchievements();
 }
 
 function appendChatMessage(name, text, color) {
@@ -6414,16 +6533,47 @@ function appendChatMessage(name, text, color) {
   div.innerHTML = `<span class="cm-name" style="color:${color||'var(--cyan)'}">${name}: </span><span class="cm-text">${text}</span>`;
   log.appendChild(div);
   log.scrollTop = log.scrollHeight;
-  // Limit to last 80 messages
   while (log.children.length > 80) log.removeChild(log.firstChild);
 }
 
-// Public server registry (uses localStorage as simple broadcast — works on same browser, demo)
+// ── Guest canvas input → send to host ─────────────────────────
+// Patch handleClick so guests relay actions instead of running locally
+const _origHandleClick = handleClick;
+handleClick = function(cx, cy) {
+  if (!G.isMP || G.mpHost) { _origHandleClick(cx, cy); return; }
+  // Guest: figure out what action this would be and relay it
+  const { c, r } = cvCoords(cx, cy);
+  if (c<0||c>=COLS||r<0||r>=ROWS) return;
+  if (G.selTower) {
+    mpSendInput('place', { c, r });
+    mpSendInput('select_tower', { towerId: G.selTower });
+  } else {
+    const tw = G.towers.find(t=>t.c===c&&t.r===r);
+    if (tw) { G.selPlaced = tw; showTowerInfo(tw); }
+    else deselectAll();
+  }
+};
+
+// Patch startWave so guest START button relays to host
+{
+  const _prev = startWave;
+  startWave = function() {
+    if (G.isMP && !G.mpHost) { mpSendInput('start_wave', {}); return; }
+    _prev();
+  };
+}
+
+// ── Public server list ─────────────────────────────────────────
 function registerPublicRoom(code) {
   try {
     const rooms = JSON.parse(localStorage.getItem(PUBLIC_ROOMS_KEY)||'[]');
-    const entry = { code, host: getMPName(), map: selMap||'?', diff: selDiff||'normal', players:1, ts: Date.now() };
-    const filtered = rooms.filter(r=>r.code!==code && Date.now()-r.ts < 300000); // 5min TTL
+    const entry = {
+      code, host: getMPName(),
+      map: document.getElementById('mp-map-select')?.value || '?',
+      diff: document.getElementById('mp-diff-select')?.value || 'normal',
+      players: 1, ts: Date.now()
+    };
+    const filtered = rooms.filter(r => r.code !== code && Date.now()-r.ts < 300000);
     filtered.push(entry);
     localStorage.setItem(PUBLIC_ROOMS_KEY, JSON.stringify(filtered.slice(-20)));
   } catch(e){}
@@ -6439,7 +6589,7 @@ function refreshServerList() {
       el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;letter-spacing:2px;padding:20px;">NO PUBLIC SERVERS FOUND</div>';
       return;
     }
-    el.innerHTML = rooms.map(r=>`
+    el.innerHTML = rooms.map(r => `
       <div class="mp-server-row">
         <div>
           <div class="sr-name">👤 ${r.host}'s server</div>
@@ -6449,12 +6599,13 @@ function refreshServerList() {
       </div>
     `).join('');
   } catch(e) {
-    el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;padding:20px;">Error loading servers</div>';
+    el.innerHTML = '<div style="text-align:center;color:var(--text3);padding:20px;">Error loading servers</div>';
   }
 }
 
 function quickJoin(code) {
-  document.getElementById('mp-join-code').value = code;
+  const inp = document.getElementById('mp-join-code');
+  if (inp) inp.value = code;
   joinRoom();
 }
 
