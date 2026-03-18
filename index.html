@@ -1111,6 +1111,8 @@ body:has(#screen-game.active) #prog-bar-wrap { display: none; }
 }
 /* hide during active game to not clutter canvas */
 body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none; }
+/* hide during lobby screen so it doesn't overlap the leave button */
+body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: none; }
 #theme-toggle-btn {
   background: rgba(255,255,255,.04); border: 1px solid var(--border2);
   border-radius: 20px; padding: 6px 12px; cursor: pointer;
