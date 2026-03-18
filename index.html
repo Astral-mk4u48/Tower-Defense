@@ -1368,6 +1368,7 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
       <button class="ctrl-btn primary" id="btn-start" onclick="startWave()">▶ START</button>
       <button class="ctrl-btn" id="btn-speed" onclick="cycleSpeed()">⏩ 1×</button>
       <button class="ctrl-btn danger" onclick="goMenu()">⬅ MENU</button>
+      <button class="ctrl-btn" id="btn-god-ingame" onclick="openGodMenu()" style="border-color:rgba(255,200,0,.5);color:#ffe066;background:rgba(255,180,0,.07);">⚡ GOD</button>
     </div>
   </div>
 </div>
@@ -1407,7 +1408,7 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
 </div>
 
 <!-- GOD MODE indicator (floats at top-center, visible everywhere) -->
-<div id="god-indicator" onclick="openGodSettings()" style="cursor:pointer">
+<div id="god-indicator" onclick="openGodMenu()" style="cursor:pointer">
   <span class="god-icon">⚡</span>
   <span class="god-text">GOD MODE</span>
   <span style="font-family:monospace;font-size:9px;letter-spacing:2px;color:rgba(255,224,102,.6);margin-left:2px">⚙ SETTINGS</span>
@@ -1418,7 +1419,7 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
 <div id="god-settings">
   <div id="god-settings-box">
     <div class="gs-header">
-      <div class="gs-title">⚡ GOD SETTINGS</div>
+      <div class="gs-title">⚡ GOD MENU</div>
       <button class="gs-close" onclick="closeGodSettings()">✕ CLOSE</button>
     </div>
     <div class="gs-body" id="gs-body">
@@ -1559,6 +1560,7 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
             <option value="fallen">FALLEN (100 waves)</option>
           </select>
         </div>
+        <button onclick="openGodMenu()" style="width:100%;padding:8px;border:1px solid rgba(255,200,0,.4);background:rgba(255,180,0,.07);color:#ffe066;cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:2px;margin-top:4px;">⚡ GOD MENU</button>
         <button onclick="mpStartGame()" id="lobby-start-btn" style="width:100%;padding:11px;border:1px solid var(--gold);background:rgba(245,200,66,.08);color:var(--gold);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">▶ START GAME</button>
       </div>
 
@@ -3193,10 +3195,37 @@ function render() {
 // GAME LOOP
 // ═══════════════════════════════════════════════════════════════
 let raf = null;
+// ── Background simulation interval (host only) ───────────────────────────────
+// Keeps the game ticking even when the tab is hidden / rAF is throttled.
+let _simInterval = null;
+let _simLastTs = 0;
+
+function _startSimInterval() {
+  if (_simInterval) return;
+  _simLastTs = performance.now();
+  _simInterval = setInterval(() => {
+    if (!G || !G.isMP || !G.mpHost) return; // only needed for MP host
+    // If rAF is running normally (tab visible), skip — rAF already called update()
+    if (!document.hidden) return;
+    const now = performance.now();
+    const rawDt = Math.min((now - _simLastTs) / 1000, 0.05);
+    _simLastTs = now;
+    if (G.gameOver || G.won) return;
+    G.bgTime += rawDt;
+    if (G.speed >= 3) { G.speedTime3x = (G.speedTime3x||0) + rawDt; updateDailyProgress("speedTime", Math.floor(G.speedTime3x)); }
+    update(rawDt * G.speed, rawDt);
+  }, 33); // ~30 ticks/sec
+}
+
+function _stopSimInterval() {
+  if (_simInterval) { clearInterval(_simInterval); _simInterval = null; }
+}
+
 function loop(ts) {
   raf = requestAnimationFrame(loop);
   const rawDt = Math.min((ts - G.lastTs) / 1000, 0.05);
   G.lastTs = ts;
+  _simLastTs = ts; // keep interval in sync so it doesn't double-tick on restore
   G.bgTime += rawDt;
   // Guests skip simulation — host is authoritative; only render
   if (!G.isMP || G.mpHost) {
@@ -3210,6 +3239,9 @@ function loop(ts) {
 // UPDATE
 // ═══════════════════════════════════════════════════════════════
 function update(dt, rdt) {
+  // Cheat flags
+  if (G._infMoney) G.cash = Math.max(G.cash, 999999);
+  if (G._infLives) G.lives = Math.max(G.lives, 1);
   // Ability cooldowns
   G.abilities.forEach(ab => { if (ab.cd > 0) ab.cd = Math.max(0, ab.cd - rdt); });
 
@@ -3288,8 +3320,8 @@ function update(dt, rdt) {
       // Reached end
       const liveDmg = e.type==='colossus'?6:e.type==='titan'||e.type==='dreadnought'?4:def.isBoss?3:def.lives||1;
       if (G.relicLifeShield > 0) { G.relicLifeShield--; G.floats.push({x:e.x,y:e.y-20,txt:'SHIELDED!',col:'#00eeff',a:1,sz:10}); e.dead=true; updateHUD(); return; }
-      G.lives = Math.max(0, G.lives - liveDmg);
-      G.stats.livesLost += liveDmg;
+      G.lives = G._infLives ? Math.max(1, G.lives) : Math.max(0, G.lives - liveDmg);
+      if (!G._infLives) G.stats.livesLost += liveDmg;
       e.dead = true;
       updateHUD();
       if (G.lives <= 0) triggerGameOver();
@@ -3323,7 +3355,7 @@ function update(dt, rdt) {
   });
 
   // Tower fire
-  G.towers.forEach(tw => {
+  if (!G._enemyImmune) { G.towers.forEach(tw => {
     if (tw.type === 'farm' || tw.type === 'dj') return;
     const djB = G.djBuffs[tw];
     const rateM = djB ? djB.rate : 1;
@@ -3390,7 +3422,7 @@ function update(dt, rdt) {
     if (tw.type !== 'laser') {
       G.projs.push({ x:cx, y:cy, tx:best.x, ty:best.y, spd:400, col:'#ffffff', sz:tw.aoe>0?5:3, life:0.3, trail:[] });
     }
-  });
+  }); } // end _enemyImmune if + towers forEach
 
   // Update projectiles
   G.projs.forEach(p => {
@@ -3692,11 +3724,11 @@ function placeTower(c, r) {
 
   // Count limit
   const count = G.towers.filter(t=>t.type===def.id).length;
-  if (count >= def.maxCount) { toast(`❌ Max ${def.maxCount} ${def.name}`); return; }
+  if (!G._infTowers && count >= def.maxCount) { toast(`❌ Max ${def.maxCount} ${def.name}`); return; }
   const adjCost = Math.floor(def.cost * (G.relicFx?.costM||1));
-  if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
+  if (!G._freeTowers && G.cash < adjCost) { toast('❌ Not enough cash'); return; }
 
-  G.cash -= adjCost;
+  if (!G._freeTowers) G.cash -= adjCost;
   G.stats.spent += adjCost;
   G.stats.built++;
 
@@ -3761,8 +3793,8 @@ function doUpgrade() {
   if (tw.tier >= def.upgrades.length) { toast('Max tier!'); return; }
   const u = def.upgrades[tw.tier];
   const adjCost = Math.floor(u.cost * (G.relicFx?.costM||1));
-  if (G.cash < adjCost) { toast('❌ Not enough cash'); return; }
-  G.cash -= adjCost;
+  if (!G._freeTowers && G.cash < adjCost) { toast('❌ Not enough cash'); return; }
+  if (!G._freeTowers) G.cash -= adjCost;
   G.upgradesDone = (G.upgradesDone||0) + 1;
   updateDailyProgress('upgrades', G.upgradesDone);
   G.stats.spent += adjCost;
@@ -3850,6 +3882,7 @@ function useAbility(id) {
 function triggerGameOver() {
   G.waveOn = false; G.gameOver = true;
   if (raf) { cancelAnimationFrame(raf); raf=null; }
+  _stopSimInterval();
   recordLoss();
   const xpEarned = Math.floor(20 + G.wave*2 + G.kills*0.3);
   addXP(xpEarned);
@@ -3872,6 +3905,7 @@ function triggerGameOver() {
 function triggerWin() {
   G.waveOn = false; G.won = true;
   if (raf) { cancelAnimationFrame(raf); raf=null; }
+  _stopSimInterval();
   const p = G.lives/G.maxLives;
   const stars = p>=0.8?'⭐⭐⭐':p>=0.5?'⭐⭐☆':'⭐☆☆';
   // Record & reward
@@ -4153,12 +4187,16 @@ function startGame(mapKey, fixedSeed) {
   updateHUD();
 
   if (raf) cancelAnimationFrame(raf);
+  _stopSimInterval();
   G.lastTs = 0;
   loop(0);
+  // MP host: start background interval so simulation runs when tab is hidden
+  if (G.isMP && G.mpHost) _startSimInterval();
 }
 
 function goMenu() {
   if (raf) { cancelAnimationFrame(raf); raf=null; }
+  _stopSimInterval();
   // Clean up any active MP session
   if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
   mpConns = []; mpIsHost = false; mpRoomCode = ''; mpPlayers = [];
@@ -5075,212 +5113,222 @@ function closeGodSettings() {
   document.getElementById('god-settings').classList.remove('open');
 }
 
+function openGodMenu() {
+  buildGodSettings();
+  document.getElementById('god-settings').classList.add('open');
+}
+
 function buildGodSettings() {
   const body = document.getElementById('gs-body');
   const inGame = document.getElementById('screen-game')?.classList.contains('active');
-
   body.innerHTML = '';
 
-  // ── SECTION: DAILY CHALLENGE ──────────────────────────────────
-  body.appendChild(gsSection('🎯 DAILY CHALLENGE'));
+  // ── SECTION: QUICK CHEATS ─────────────────────────────────────
+  body.appendChild(gsSection('⚡ QUICK CHEATS'));
 
-  const { ch, prog, done, key } = getDailyProgress();
-  if (done) {
-    const doneRow = gsRowEl('TODAY\'S CHALLENGE', ch.desc);
-    const badge = document.createElement('span');
-    badge.style.cssText = 'font-family:Orbitron,monospace;font-size:10px;color:var(--green);letter-spacing:1px;';
-    badge.textContent = '✅ ALREADY COMPLETED';
-    doneRow.querySelector('.gs-controls').appendChild(badge);
-    body.appendChild(doneRow);
-  } else {
-    body.appendChild(gsRow('TODAY\'S CHALLENGE', ch.icon + ' ' + ch.desc, [
-      gsAddBtn('COMPLETE NOW', 'green', () => {
-        if (!PLAYER.dailyProgress) PLAYER.dailyProgress = {};
-        PLAYER.dailyProgress[key] = ch.goal;
-        PLAYER.shards = (PLAYER.shards||0) + ch.reward;
-        PLAYER.dailyCompleted = (PLAYER.dailyCompleted||0) + 1;
-        savePlayer();
-        toast('🎯 DAILY COMPLETE! +' + ch.reward + ' 💎');
-        updateShardDisplays();
-        updateXPBar();
-        addXP(ch.reward * 2);
-        checkAchievements();
-        refreshDailyBar();
-        buildGodSettings();
-      }),
-    ]));
-    // Show current progress
-    const progRow = gsRowEl('PROGRESS', `${prog} / ${ch.goal}`);
-    const progBadge = document.createElement('span');
-    progBadge.style.cssText = 'font-family:Orbitron,monospace;font-size:11px;font-weight:900;color:var(--gold);';
-    progBadge.textContent = `${prog} / ${ch.goal}`;
-    progRow.querySelector('.gs-controls').appendChild(progBadge);
-    body.appendChild(progRow);
-  }
+  // Infinite Money toggle
+  body.appendChild(gsRow('INFINITE MONEY', 'Cash never decreases', [
+    gsToggle('gs-infmoney', G._infMoney||false, on => {
+      G._infMoney = on;
+      toast(on ? '💰 Infinite money ON' : '💰 Infinite money OFF');
+    }),
+  ]));
 
-  // ── SECTION: CURRENCIES ──────────────────────────────────────
-  body.appendChild(gsSection('💰 CURRENCIES'));
+  // Infinite Lives toggle
+  body.appendChild(gsRow('INFINITE LIVES', 'Lives never drop below 1', [
+    gsToggle('gs-inflives', G._infLives||false, on => {
+      G._infLives = on;
+      toast(on ? '❤️ Infinite lives ON' : '❤️ Infinite lives OFF');
+    }),
+  ]));
 
-  // Cash (in-game only)
+  // Infinite Tower Limits toggle
+  body.appendChild(gsRow('INFINITE TOWERS', 'No placement cap per type', [
+    gsToggle('gs-inftowers', G._infTowers||false, on => {
+      G._infTowers = on;
+      toast(on ? '🏗️ Infinite towers ON' : '🏗️ Infinite towers OFF');
+    }),
+  ]));
+
+  // Free Towers toggle
+  body.appendChild(gsRow('FREE TOWERS', 'All towers & upgrades cost $0', [
+    gsToggle('gs-freetowers', G._freeTowers||false, on => {
+      G._freeTowers = on;
+      toast(on ? '🆓 Free towers ON' : '🆓 Free towers OFF');
+    }),
+  ]));
+
+  // One-hit mode toggle
+  body.appendChild(gsRow('ONE-HIT MODE', 'All towers deal 999× damage', [
+    gsToggle('gs-onehit', G._oneHitMode||false, on => {
+      G._oneHitMode = on;
+      toast(on ? '💥 One-hit mode ON' : '💥 One-hit mode OFF');
+    }),
+  ]));
+
+  // Instant kill toggle
+  body.appendChild(gsRow('TOWER IMMUNE', 'Enemies ignore towers (sandbox)', [
+    gsToggle('gs-immune', G._enemyImmune||false, on => {
+      G._enemyImmune = on;
+      toast(on ? '🛡️ Enemies immune ON' : '🛡️ Enemies immune OFF');
+    }),
+  ]));
+
+  // ── SECTION: CASH ─────────────────────────────────────────────
   if (inGame) {
-    body.appendChild(gsRow('CASH', 'In-game currency', [
-      gsAddBtn('+$500',   () => { G.cash += 500;    updateHUD(); gsFlash('cash'); toast('💰 +$500'); }),
-      gsAddBtn('+$2000',  () => { G.cash += 2000;   updateHUD(); gsFlash('cash'); toast('💰 +$2000'); }),
-      gsAddBtn('+$10K',   () => { G.cash += 10000;  updateHUD(); gsFlash('cash'); toast('💰 +$10,000'); }),
-      gsAddBtn('MAX',     () => { G.cash += 999999; updateHUD(); gsFlash('cash'); toast('💰 MAX CASH'); }),
+    body.appendChild(gsSection('💰 CASH'));
+    body.appendChild(gsRow('ADD CASH', 'Instant money injection', [
+      gsAddBtn('+$500',   () => { G.cash += 500;    updateHUD(); toast('💰 +$500'); }),
+      gsAddBtn('+$5K',    () => { G.cash += 5000;   updateHUD(); toast('💰 +$5,000'); }),
+      gsAddBtn('+$50K',   () => { G.cash += 50000;  updateHUD(); toast('💰 +$50,000'); }),
+      gsAddBtn('MAX',     () => { G.cash = 9999999; updateHUD(); toast('💰 MAX CASH'); }),
     ]));
-
-    // Custom cash input
     body.appendChild(gsRow('SET CASH', 'Set exact amount', [
       gsNumberInput('gs-cash-val', G.cash),
       gsSetBtn(() => {
         const v = parseInt(document.getElementById('gs-cash-val').value);
-        if (!isNaN(v) && v >= 0) { G.cash = v; updateHUD(); toast(`💰 Cash set to $${v}`); }
+        if (!isNaN(v) && v >= 0) { G.cash = v; updateHUD(); toast(`💰 Cash → $${v.toLocaleString()}`); }
       }),
     ]));
 
-    // Lives
-    body.appendChild(gsRow('LIVES', 'Current / max lives', [
-      gsAddBtn('+1',  'green', () => { G.lives = Math.min(G.lives+1, G.maxLives); updateHUD(); toast('❤️ +1 Life'); }),
-      gsAddBtn('+5',  'green', () => { G.lives = Math.min(G.lives+5, G.maxLives); updateHUD(); toast('❤️ +5 Lives'); }),
-      gsAddBtn('FULL','green', () => { G.lives = G.maxLives; updateHUD(); toast('❤️ Lives full!'); }),
+    // ── SECTION: LIVES ───────────────────────────────────────────
+    body.appendChild(gsSection('❤️ LIVES'));
+    body.appendChild(gsRow('LIVES', 'Add / restore lives', [
+      gsAddBtn('+1',   'green', () => { G.lives = Math.min(G.lives+1,  G.maxLives); updateHUD(); toast('❤️ +1'); }),
+      gsAddBtn('+10',  'green', () => { G.lives = Math.min(G.lives+10, G.maxLives); updateHUD(); toast('❤️ +10'); }),
+      gsAddBtn('FULL', 'green', () => { G.lives = G.maxLives; updateHUD(); toast('❤️ Full lives!'); }),
+    ]));
+    body.appendChild(gsRow('MAX LIVES', 'Raise the cap', [
+      gsAddBtn('+10',  'green', () => { G.maxLives += 10;  updateHUD(); toast('❤️ Cap +10'); }),
+      gsAddBtn('+50',  'green', () => { G.maxLives += 50;  updateHUD(); toast('❤️ Cap +50'); }),
+      gsAddBtn('999',  'green', () => { G.maxLives = 999; G.lives = 999; updateHUD(); toast('❤️ Immortal!'); }),
     ]));
 
-    // Max lives
-    body.appendChild(gsRow('MAX LIVES', 'Increase the cap', [
-      gsAddBtn('+5',   'green', () => { G.maxLives += 5;   G.lives = Math.min(G.lives, G.maxLives); updateHUD(); toast('❤️ Max lives +5'); }),
-      gsAddBtn('+20',  'green', () => { G.maxLives += 20;  G.lives = Math.min(G.lives, G.maxLives); updateHUD(); toast('❤️ Max lives +20'); }),
-      gsAddBtn('999',  'green', () => { G.maxLives = 999; G.lives = 999; updateHUD(); toast('❤️ Immortal!'); }),
+    // ── SECTION: WAVES ───────────────────────────────────────────
+    body.appendChild(gsSection('🌊 WAVES'));
+    body.appendChild(gsRow('SKIP WAVES', 'Jump forward instantly', [
+      gsAddBtn('+1',   () => { gsSkipWaves(1);  toast('⏭ +1 wave'); }),
+      gsAddBtn('+5',   () => { gsSkipWaves(5);  toast('⏭ +5 waves'); }),
+      gsAddBtn('+10',  () => { gsSkipWaves(10); toast('⏭ +10 waves'); }),
+      gsNumberInput('gs-wave-val', G.wave + 1),
+      gsSetBtn(() => {
+        const v = parseInt(document.getElementById('gs-wave-val').value);
+        if (!isNaN(v) && v > G.wave && v <= G.totalWaves) { gsSkipWaves(v - G.wave); toast(`⏭ Wave → ${v}`); }
+      }),
+    ]));
+    body.appendChild(gsRow('ENEMIES', 'Control current wave enemies', [
+      gsAddBtn('KILL ALL',   'red',  () => { G.enemies.forEach(e => { if (!e.dead) applyDmg(e, 999999); }); toast('💀 All killed'); }),
+      gsAddBtn('FREEZE ALL', 'cyan', () => { G.enemies.forEach(e => { if (!e.dead) { e.frozen=true; e.frozenT=30; e.spd=0; } }); toast('❄️ All frozen'); }),
+      gsAddBtn('CLEAR',      '',     () => { G.enemies=[]; G.spawnQ=[]; toast('✅ Cleared'); }),
+    ]));
+    body.appendChild(gsRow('WIN INSTANTLY', 'Skip to victory screen', [
+      gsAddBtn('WIN NOW', 'green', () => { closeGodSettings(); setTimeout(triggerWin, 100); }),
+    ]));
+    {
+      const speedWrap = document.createElement('div'); speedWrap.className = 'gs-wave-btns';
+      [[1],[2],[3],[5],[10]].forEach(([spd]) => {
+        const b = document.createElement('button');
+        b.className = 'gs-wave-btn'; b.textContent = spd + 'x';
+        b.onclick = () => { G.speed = spd; document.getElementById('btn-speed').textContent = '\u23e9 ' + spd + 'x'; toast('Speed: ' + spd + 'x'); };
+        speedWrap.appendChild(b);
+      });
+      body.appendChild(gsRow('GAME SPEED', 'Simulation speed multiplier', [speedWrap]));
+    }
+
+    // ── SECTION: TOWERS ──────────────────────────────────────────
+    body.appendChild(gsSection('🏗️ TOWERS'));
+    body.appendChild(gsRow('UPGRADE ALL', 'Max tier every placed tower', [
+      gsAddBtn('MAX ALL', 'purple', () => {
+        G.towers.forEach(tw => {
+          const def = TDEFS.find(d=>d.id===tw.type);
+          while (tw.tier < def.upgrades.length) {
+            const u = def.upgrades[tw.tier];
+            tw.dmg *= u.dmgM; tw.range *= u.rngM; tw.rate *= u.rateM;
+            if (u.special) tw.special = u.special;
+            tw.tier++;
+          }
+        });
+        if (G.selPlaced) showTowerInfo(G.selPlaced);
+        updateHUD(); toast('⬆️ All towers maxed!');
+      }),
+    ]));
+    body.appendChild(gsRow('REMOVE ALL TOWERS', 'Sell everything instantly', [
+      gsAddBtn('SELL ALL', 'red', () => {
+        const refund = G.towers.reduce((acc,tw) => acc + Math.floor((tw.totalSpent||TDEFS.find(d=>d.id===tw.type).cost)*0.6), 0);
+        G.towers = []; G.selPlaced = null;
+        G.cash += refund;
+        document.getElementById('tower-info').style.display = 'none';
+        updateHUD(); refreshTowerCounts();
+        toast(`💰 Sold all! +$${refund.toLocaleString()}`);
+      }),
+    ]));
+
+    // ── SECTION: ABILITIES ────────────────────────────────────────
+    body.appendChild(gsSection('⚡ ABILITIES'));
+    body.appendChild(gsRow('RESET ABILITIES', 'Full uses & zero cooldowns', [
+      gsAddBtn('RESET ALL', 'cyan', () => {
+        G.abilities.forEach(ab => { ab.uses = ab.maxUses; ab.cd = 0; });
+        buildAbilitiesPanel(); updateHUD(); toast('✨ Abilities reset!');
+      }),
+      gsAddBtn('∞ USES', 'cyan', () => {
+        G.abilities.forEach(ab => { ab.uses = 99; ab.maxUses = 99; ab.cd = 0; });
+        buildAbilitiesPanel(); updateHUD(); toast('✨ 99 uses!');
+      }),
+    ]));
+
+    // ── SECTION: SCORE ────────────────────────────────────────────
+    body.appendChild(gsSection('🏆 SCORE'));
+    body.appendChild(gsRow('ADD SCORE', '', [
+      gsAddBtn('+10K',  () => { G.score += 10000;  updateHUD(); toast('+10K score'); }),
+      gsAddBtn('+100K', () => { G.score += 100000; updateHUD(); toast('+100K score'); }),
+      gsAddBtn('+1M',   () => { G.score += 1000000;updateHUD(); toast('+1M score'); }),
     ]));
   }
 
-  // Shards (always available)
-  body.appendChild(gsRow('SHARDS 💎', 'Gacha currency', [
-    gsAddBtn('+100',  'cyan', () => { PLAYER.shards += 100;  savePlayer(); updateShardDisplays(); toast('💎 +100 Shards'); }),
-    gsAddBtn('+500',  'cyan', () => { PLAYER.shards += 500;  savePlayer(); updateShardDisplays(); toast('💎 +500 Shards'); }),
-    gsAddBtn('+5000', 'cyan', () => { PLAYER.shards += 5000; savePlayer(); updateShardDisplays(); toast('💎 +5000 Shards'); }),
-    gsAddBtn('MAX',   'cyan', () => { PLAYER.shards += 99999; savePlayer(); updateShardDisplays(); toast('💎 MAX SHARDS'); }),
+  // ── SECTION: PLAYER CURRENCIES ───────────────────────────────
+  body.appendChild(gsSection('💎 PLAYER CURRENCIES'));
+  body.appendChild(gsRow('SHARDS', 'Gacha currency', [
+    gsAddBtn('+500',   'cyan', () => { PLAYER.shards += 500;   savePlayer(); updateShardDisplays(); toast('💎 +500'); }),
+    gsAddBtn('+5K',    'cyan', () => { PLAYER.shards += 5000;  savePlayer(); updateShardDisplays(); toast('💎 +5,000'); }),
+    gsAddBtn('MAX',    'cyan', () => { PLAYER.shards += 99999; savePlayer(); updateShardDisplays(); toast('💎 MAX SHARDS'); }),
+  ]));
+  body.appendChild(gsRow('COINS 🪙', 'Premium currency', [
+    gsAddBtn('+500',   '',     () => { addCoins(500);   updateCoinDisplays(); toast('🪙 +500'); }),
+    gsAddBtn('+5K',    '',     () => { addCoins(5000);  updateCoinDisplays(); toast('🪙 +5,000'); }),
+    gsAddBtn('MAX',    '',     () => { addCoins(99999); updateCoinDisplays(); toast('🪙 MAX COINS'); }),
   ]));
 
-  // Custom shards input
-  body.appendChild(gsRow('SET SHARDS', 'Set exact amount', [
-    gsNumberInput('gs-shard-val', PLAYER.shards),
-    gsSetBtn(() => {
-      const v = parseInt(document.getElementById('gs-shard-val').value);
-      if (!isNaN(v) && v >= 0) { PLAYER.shards = v; savePlayer(); updateShardDisplays(); toast(`💎 Shards set to ${v}`); }
-    }),
+  // ── SECTION: PROGRESSION ─────────────────────────────────────
+  body.appendChild(gsSection('⭐ PROGRESSION'));
+  body.appendChild(gsRow('XP', '', [
+    gsAddBtn('+1K XP',  'purple', () => { addXP(1000);  toast('⭐ +1K XP'); }),
+    gsAddBtn('+10K XP', 'purple', () => { addXP(10000); toast('⭐ +10K XP'); }),
+    gsAddBtn('LVL UP',  'purple', () => { addXP(xpForNext(PLAYER.level||1) - (PLAYER.xp||0) + 1); toast('⭐ Level Up!'); }),
   ]));
-
-  // ── SECTION: PLAYER PROGRESSION ──────────────────────────────
-  body.appendChild(gsSection('⭐ PLAYER PROGRESSION'));
-
-  // XP / Level
-  body.appendChild(gsRow('XP BOOST', 'Add experience points', [
-    gsAddBtn('+500 XP',  'purple', () => { addXP(500);   toast('⭐ +500 XP'); }),
-    gsAddBtn('+5000 XP', 'purple', () => { addXP(5000);  toast('⭐ +5000 XP'); }),
-    gsAddBtn('LEVEL UP', 'purple', () => { addXP(xpForNext(PLAYER.level||1) - (PLAYER.xp||0) + 1); toast('⭐ Level Up!'); }),
-  ]));
-
-  // Set level directly
-  body.appendChild(gsRow('SET LEVEL', 'Teleport to level', [
+  body.appendChild(gsRow('SET LEVEL', '', [
     gsNumberInput('gs-lvl-val', PLAYER.level||1),
     gsSetBtn(() => {
       const v = parseInt(document.getElementById('gs-lvl-val').value);
-      if (!isNaN(v) && v >= 1 && v <= 100) {
-        PLAYER.level = v;
-        PLAYER.xp = xpForLevel(v);
-        savePlayer(); updateXPBar();
-        toast(`⭐ Level set to ${v}`);
+      if (!isNaN(v) && v >= 1 && v <= 999) {
+        PLAYER.level = v; PLAYER.xp = xpForLevel(v);
+        savePlayer(); updateXPBar(); toast(`⭐ Level → ${v}`);
       }
     }),
   ]));
 
-  // Streak
-  body.appendChild(gsRow('WIN STREAK', 'Set current streak', [
-    gsAddBtn('+3',  'purple', () => { PLAYER.streak = (PLAYER.streak||0)+3; PLAYER.bestStreak = Math.max(PLAYER.bestStreak||0, PLAYER.streak); savePlayer(); updateXPBar(); toast('🔥 Streak +3'); }),
-    gsAddBtn('MAX', 'purple', () => { PLAYER.streak = 99; PLAYER.bestStreak = 99; savePlayer(); updateXPBar(); toast('🔥 MAX STREAK'); }),
+  // ── SECTION: COLLECTION ──────────────────────────────────────
+  body.appendChild(gsSection('🎲 COLLECTION'));
+  body.appendChild(gsRow('UNLOCK ALL RELICS/SKINS', 'Get every item ×3', [
+    gsAddBtn('GET ALL', 'purple', () => {
+      GACHA_POOL.forEach(item => {
+        if (!PLAYER.collection[item.id]) PLAYER.collection[item.id] = { count:0, equipped:false };
+        PLAYER.collection[item.id].count = Math.max(PLAYER.collection[item.id].count, 3);
+      });
+      savePlayer(); refreshCollTab(); toast('🎲 Full collection!');
+    }),
+    gsAddBtn('CLEAR', 'red', () => { PLAYER.collection = {}; savePlayer(); refreshCollTab(); toast('🗑 Cleared'); }),
   ]));
-
-  // ── SECTION: IN-GAME TWEAKS (only when in game) ───────────────
-  if (inGame) {
-    body.appendChild(gsSection('🎮 IN-GAME TWEAKS'));
-
-    // Speed
-    const speedRow = gsRowEl('GAME SPEED', '1× / 2× / 3×');
-    const speedBtns = ['1×','2×','3×'].map((lbl, i) => {
-      const b = document.createElement('button');
-      b.className = 'gs-wave-btn';
-      b.textContent = lbl;
-      b.onclick = () => { G.speed = i+1; document.getElementById('btn-speed').textContent = `⏩ ${G.speed}×`; toast(`Speed: ${G.speed}×`); };
-      return b;
-    });
-    const speedWrap = document.createElement('div'); speedWrap.className = 'gs-wave-btns';
-    speedBtns.forEach(b => speedWrap.appendChild(b));
-    speedRow.querySelector('.gs-controls').appendChild(speedWrap);
-    body.appendChild(speedRow);
-
-    // Skip to wave
-    body.appendChild(gsRow('SKIP TO WAVE', 'Jump forward (ends current wave)', [
-      gsAddBtn('+5 waves',  () => { gsSkipWaves(5);  toast(`⏭ Skipped 5 waves`); }),
-      gsAddBtn('+10 waves', () => { gsSkipWaves(10); toast(`⏭ Skipped 10 waves`); }),
-      gsNumberInput('gs-wave-val', G.wave + 1),
-      gsSetBtn(() => {
-        const v = parseInt(document.getElementById('gs-wave-val').value);
-        if (!isNaN(v) && v > G.wave && v <= G.totalWaves) { gsSkipWaves(v - G.wave); toast(`⏭ Jumped to wave ${v}`); }
-      }),
-    ]));
-
-    // Kill all enemies
-    body.appendChild(gsRow('ENEMIES', 'Instant clear or freeze', [
-      gsAddBtn('KILL ALL', 'red', () => {
-        G.enemies.forEach(e => { if (!e.dead) applyDmg(e, 999999, null); });
-        toast('💀 All enemies killed');
-      }),
-      gsAddBtn('FREEZE ALL', 'cyan', () => {
-        G.enemies.forEach(e => { if (!e.dead) { e.frozen=true; e.frozenT=30; e.spd=0; } });
-        toast('❄️ All frozen 30s');
-      }),
-      gsAddBtn('CLEAR', () => {
-        G.enemies = []; G.spawnQ = [];
-        toast('✅ Enemies cleared');
-      }),
-    ]));
-
-    // Abilities
-    body.appendChild(gsRow('ABILITIES', 'Reset all uses & cooldowns', [
-      gsAddBtn('RESET ALL', 'cyan', () => {
-        G.abilities.forEach(ab => { ab.uses = ab.maxUses; ab.cd = 0; });
-        buildAbilitiesPanel(); updateHUD();
-        toast('✨ Abilities reset!');
-      }),
-      gsAddBtn('+99 USES', 'cyan', () => {
-        G.abilities.forEach(ab => { ab.uses = 99; ab.maxUses = 99; ab.cd = 0; });
-        buildAbilitiesPanel(); updateHUD();
-        toast('✨ 99 uses each!');
-      }),
-    ]));
-
-    // Damage multiplier toggle
-    body.appendChild(gsRow('ONE-HIT MODE', 'All towers deal 999× damage', [
-      gsToggle('gs-onehit', G._oneHitMode||false, (on) => {
-        G._oneHitMode = on;
-        if (on) toast('💥 One-hit mode ON');
-        else toast('💥 One-hit mode OFF');
-      }),
-    ]));
-
-    // Score
-    body.appendChild(gsRow('SCORE', 'Add to current score', [
-      gsAddBtn('+10K',  () => { G.score += 10000;  updateHUD(); toast('+10,000 score'); }),
-      gsAddBtn('+100K', () => { G.score += 100000; updateHUD(); toast('+100,000 score'); }),
-    ]));
-  }
-
-  // ── SECTION: ACCOUNT ACTIONS ──────────────────────────────────
-  body.appendChild(gsSection('🛠️ ACCOUNT ACTIONS'));
-
-  // Unlock all achievements
-  body.appendChild(gsRow('ACHIEVEMENTS', 'Unlock everything', [
+  body.appendChild(gsRow('ACHIEVEMENTS', '', [
     gsAddBtn('UNLOCK ALL', 'purple', () => {
       ACHIEVEMENTS.forEach(a => {
         if (!PLAYER.achievements?.includes(a.id)) {
@@ -5290,43 +5338,57 @@ function buildGodSettings() {
         }
       });
       savePlayer(); updateShardDisplays(); refreshAchievementsTab();
-      toast('🏆 All achievements unlocked!');
+      toast('🏆 All unlocked!');
+    }),
+  ]));
+  body.appendChild(gsRow('UNLOCK ALL TOWERS', 'Permanently unlock all premium towers', [
+    gsAddBtn('UNLOCK ALL', 'green', () => {
+      if (!PLAYER.unlockedTowers) PLAYER.unlockedTowers = {};
+      LOCKED_TOWERS_BY_DEFAULT.forEach(tid => { PLAYER.unlockedTowers[tid] = true; });
+      savePlayer(); buildTowerPanel && buildTowerPanel(); toast('🔓 All towers unlocked!');
     }),
   ]));
 
-  // Collection — add all items
-  body.appendChild(gsRow('COLLECTION', 'Get every relic/skin/augment', [
-    gsAddBtn('GET ALL', 'purple', () => {
-      GACHA_POOL.forEach(item => {
-        if (!PLAYER.collection[item.id]) PLAYER.collection[item.id] = { count: 0, equipped: false };
-        PLAYER.collection[item.id].count = Math.max(PLAYER.collection[item.id].count, 3);
-      });
-      savePlayer(); refreshCollTab();
-      toast('🎲 Full collection unlocked!');
-    }),
-    gsAddBtn('CLEAR', 'red', () => {
-      PLAYER.collection = {}; savePlayer(); refreshCollTab();
-      toast('🗑 Collection cleared');
-    }),
+  // ── SECTION: DAILY ───────────────────────────────────────────
+  body.appendChild(gsSection('🎯 DAILY CHALLENGE'));
+  const { ch, prog, done, key } = getDailyProgress();
+  if (done) {
+    const d2 = gsRowEl('TODAY', ch.desc);
+    const b2 = document.createElement('span');
+    b2.style.cssText = 'font-family:Orbitron,monospace;font-size:10px;color:var(--green);';
+    b2.textContent = '✅ COMPLETE';
+    d2.querySelector('.gs-controls').appendChild(b2);
+    body.appendChild(d2);
+  } else {
+    body.appendChild(gsRow("COMPLETE TODAY'S", ch.icon + ' ' + ch.desc, [
+      gsAddBtn('DONE', 'green', () => {
+        if (!PLAYER.dailyProgress) PLAYER.dailyProgress = {};
+        PLAYER.dailyProgress[key] = ch.goal;
+        PLAYER.shards = (PLAYER.shards||0) + ch.reward;
+        PLAYER.dailyCompleted = (PLAYER.dailyCompleted||0) + 1;
+        savePlayer(); updateShardDisplays(); refreshDailyBar(); addXP(ch.reward*2);
+        toast('🎯 Daily done! +' + ch.reward + '💎');
+      }),
+    ]));
+  }
+
+  // ── SECTION: WIN/LOSS STATS ──────────────────────────────────
+  body.appendChild(gsSection('📊 STATS'));
+  body.appendChild(gsRow('WINS', '', [
+    gsAddBtn('+10',          'green', () => { PLAYER.totalWins=(PLAYER.totalWins||0)+10; savePlayer(); toast('+10 wins'); }),
+    gsAddBtn('+1 nightmare', 'green', () => { PLAYER.nightmareWins=(PLAYER.nightmareWins||0)+1; savePlayer(); toast('+1 nightmare'); }),
+    gsAddBtn('+1 perfect',   'green', () => { PLAYER.perfectWins=(PLAYER.perfectWins||0)+1; savePlayer(); toast('+1 perfect'); }),
+  ]));
+  body.appendChild(gsRow('KILLS', '', [
+    gsAddBtn('+1K',  '', () => { PLAYER.totalKills=(PLAYER.totalKills||0)+1000;  savePlayer(); checkAchievements(); toast('+1K kills'); }),
+    gsAddBtn('+10K', '', () => { PLAYER.totalKills=(PLAYER.totalKills||0)+10000; savePlayer(); checkAchievements(); toast('+10K kills'); }),
   ]));
 
-  // Win count
-  body.appendChild(gsRow('WIN COUNT', 'Add wins to stats', [
-    gsAddBtn('+10 wins', 'green', () => { PLAYER.totalWins = (PLAYER.totalWins||0)+10; savePlayer(); updateXPBar(); toast('+10 wins'); }),
-    gsAddBtn('+1 nightmare','green', () => { PLAYER.nightmareWins = (PLAYER.nightmareWins||0)+1; savePlayer(); toast('+1 nightmare win'); }),
-    gsAddBtn('+1 perfect', 'green', () => { PLAYER.perfectWins = (PLAYER.perfectWins||0)+1; savePlayer(); toast('+1 perfect win'); }),
-  ]));
-
-  // Kill count
-  body.appendChild(gsRow('KILL COUNT', 'Add to total kills', [
-    gsAddBtn('+1000', () => { PLAYER.totalKills = (PLAYER.totalKills||0)+1000; savePlayer(); checkAchievements(); toast('+1000 kills'); }),
-    gsAddBtn('+10K',  () => { PLAYER.totalKills = (PLAYER.totalKills||0)+10000; savePlayer(); checkAchievements(); toast('+10,000 kills'); }),
-  ]));
-
-  // Reset all data
-  body.appendChild(gsRow('DANGER ZONE', 'Wipe all saved data', [
+  // ── SECTION: DANGER ──────────────────────────────────────────
+  body.appendChild(gsSection('🔴 DANGER ZONE'));
+  body.appendChild(gsRow('RESET ALL DATA', 'Wipe everything permanently', [
     gsAddBtn('RESET SAVE', 'red', () => {
-      if (confirm('⚠️ This will delete ALL save data. Are you sure?')) {
+      if (confirm('⚠️ Delete ALL save data? This cannot be undone!')) {
         localStorage.removeItem('ws_player');
         localStorage.removeItem('ws_godmode');
         location.reload();
@@ -5334,7 +5396,6 @@ function buildGodSettings() {
     }),
   ]));
 }
-
 // ── Helper builders ─────────────────────────────────────────────
 
 function gsSection(label) {
@@ -5596,7 +5657,7 @@ placeTower = function(c, r) {
   const def = TDEFS.find(d=>d.id===G.selTower);
   if (!def) return;
   const count = G.towers.filter(t=>t.type===def.id).length;
-  if (count >= def.maxCount) { toast(`❌ Max ${def.maxCount} ${def.name}`); return; }
+  if (!G._infTowers && count >= def.maxCount) { toast(`❌ Max ${def.maxCount} ${def.name}`); return; }
   const godCost = Math.max(1, Math.floor(def.cost * 0.01));
   if (G.cash < godCost) { toast('❌ Not enough cash'); return; }
   G.cash -= godCost;
@@ -6653,6 +6714,7 @@ function mpStartGameAsHost(data) {
   // Set MP flags AFTER startGame (initGame resets them)
   G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
   G._mpIncomeApplied = false;
+  _startSimInterval(); // keep simulation alive when tab is hidden
   showMPChatTab();
   toast('🎮 Game started! Host · ' + mpPlayers.length + ' players');
 }
