@@ -1326,8 +1326,8 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
         <div class="ti-stats" id="ti-stats"></div>
         <div class="ti-upg-list" id="ti-upg-list"></div>
         <div class="ti-upg">
-          <button class="ti-upg-btn" id="ti-upg-btn" onclick="doUpgrade()">⬆ UPGRADE</button>
-          <button class="ti-sell-btn" id="ti-sell-btn" onclick="doSell()">💰 SELL</button>
+          <button class="ti-upg-btn" id="ti-upg-btn" onclick="G.isMP&&!G.mpHost?mpSendInput('upgrade',{c:G.selPlaced?.c,r:G.selPlaced?.r}):doUpgrade()">⬆ UPGRADE</button>
+          <button class="ti-sell-btn" id="ti-sell-btn" onclick="G.isMP&&!G.mpHost?mpSendInput('sell',{c:G.selPlaced?.c,r:G.selPlaced?.r}):doSell()">💰 SELL</button>
         </div>
       </div>
     </div>
@@ -2670,11 +2670,11 @@ function rng2(c, r, i) {
   return (x>>>0)/0xFFFFFFFF;
 }
 
-function initGame(mapKey) {
+function initGame(mapKey, fixedSeed) {
   const mapDef = MAPS[mapKey];
   const diff = DIFF[selDiff];
   const mode = MODES[selMode];
-  const seed = (Date.now() ^ Math.random()*0xFFFFFF|0);
+  const seed = fixedSeed !== undefined ? fixedSeed : (Date.now() ^ Math.random()*0xFFFFFF|0);
 
   // Seeded RNG
   let rs = seed;
@@ -3197,9 +3197,12 @@ function loop(ts) {
   raf = requestAnimationFrame(loop);
   const rawDt = Math.min((ts - G.lastTs) / 1000, 0.05);
   G.lastTs = ts;
-  if (G.speed >= 3) { G.speedTime3x = (G.speedTime3x||0) + rawDt; updateDailyProgress("speedTime", Math.floor(G.speedTime3x)); }
   G.bgTime += rawDt;
-  update(rawDt * G.speed, rawDt);
+  // Guests skip simulation — host is authoritative; only render
+  if (!G.isMP || G.mpHost) {
+    if (G.speed >= 3) { G.speedTime3x = (G.speedTime3x||0) + rawDt; updateDailyProgress("speedTime", Math.floor(G.speedTime3x)); }
+    update(rawDt * G.speed, rawDt);
+  }
   render();
 }
 
@@ -4047,7 +4050,7 @@ function buildAbilitiesPanel() {
         <div class="ab-cd-bar"></div>
       `;
       b.title = ab.desc;
-      b.onclick = () => useAbility(ab.id);
+      b.onclick = () => { if (G.isMP && !G.mpHost) { mpSendInput('ability', {id: ab.id}); } else { useAbility(ab.id); } };
       grid.appendChild(b);
     });
   }
@@ -4118,9 +4121,9 @@ screen.orientation?.addEventListener('change', () => setTimeout(onWindowResize, 
 // ═══════════════════════════════════════════════════════════════
 // NAVIGATION
 // ═══════════════════════════════════════════════════════════════
-function startGame(mapKey) {
+function startGame(mapKey, fixedSeed) {
   selMap = mapKey;
-  initGame(mapKey);
+  initGame(mapKey, fixedSeed);
 
   document.getElementById('screen-menu').classList.remove('active');
   const pb = document.getElementById('prog-bar-wrap'); if(pb) pb.style.display='none';
@@ -5915,8 +5918,9 @@ function confirmLoadout() {
   if (_mpPendingStart) {
     const data = _mpPendingStart;
     _mpPendingStart = null;
-    broadcastMPData({ type:'start_game', ...data });
     mpStartGameAsHost(data);
+    // Broadcast AFTER startGame so G.seed is available
+    broadcastMPData({ type:'start_game', ...data, seed: G.seed });
   }
 }
 
@@ -6656,7 +6660,7 @@ function mpStartGameAsHost(data) {
 function mpStartGameAsGuest(data) {
   document.getElementById('screen-lobby').classList.remove('active');
   document.getElementById('screen-mp').classList.remove('active');
-  startGame(data.mapKey || Object.keys(MAPS)[0]);
+  startGame(data.mapKey || Object.keys(MAPS)[0], data.seed);
   G.isMP = true; G.mpHost = false; G.mpPlayers = mpPlayers;
   G._mpIncomeApplied = false;
   G.waveOn = false;
@@ -6674,8 +6678,14 @@ function applyMPGameState(state) {
   G.kills  = state.kills;
   G.wave   = state.wave;
   G.waveOn = state.waveOn;
-  // Sync towers
+  // Sync towers — preserve selection reference by matching position
+  const prevSel = G.selPlaced;
   G.towers = state.towers || [];
+  // Re-attach selPlaced to the new tower object at same grid position
+  if (prevSel) {
+    G.selPlaced = G.towers.find(t => t.c === prevSel.c && t.r === prevSel.r) || null;
+    if (G.selPlaced) showTowerInfo(G.selPlaced);
+  }
   // Sync enemies
   G.enemies = (state.enemies || []).map(e => ({
     ...e,
@@ -6691,6 +6701,9 @@ function applyMPGameState(state) {
   // Update start button state
   document.getElementById('btn-start').textContent = G.waveOn ? '⏳ WAVE' : '▶ START';
   document.getElementById('btn-start').className = G.waveOn ? 'ctrl-btn' : 'ctrl-btn primary';
+  // Sync game-over / win state
+  if (state.gameOver && !G.gameOver) { G.gameOver = true; document.getElementById('ov-lose').classList.add('active'); }
+  if (state.won     && !G.won)      { G.won = true;      document.getElementById('ov-win').classList.add('active'); }
   updateHUD();
 }
 
@@ -6755,8 +6768,12 @@ const _mpBroadcast = function(rawDt) {
       kills:  G.kills,
       wave:   G.wave,
       waveOn: G.waveOn,
+      gameOver: G.gameOver,
+      won: G.won,
       towers: G.towers.map(t => ({
-        c:t.c, r:t.r, type:t.type, tier:t.tier, range:t.range
+        c:t.c, r:t.r, type:t.type, tier:t.tier, range:t.range,
+        dmg:t.dmg, rate:t.rate, aoe:t.aoe, special:t.special,
+        totalSpent:t.totalSpent, cd:t.cd
       })),
       enemies: G.enemies.filter(e=>!e.dead).map(e => ({
         type:e.type, x:e.x, y:e.y, hp:e.hp, maxHp:e.maxHp,
