@@ -5894,12 +5894,17 @@ let _mpPendingStart = null;
 function openLoadout(mapKey) {
   _loadoutPendingMap = mapKey;
   _selectedLoadoutRole = PLAYER.selectedRole || 'allround';
+  // If this is an MP start, skip the loadout modal — roles already chosen in lobby
+  if (_mpPendingStart) {
+    confirmLoadout();
+    return;
+  }
   buildLoadoutModal();
   document.getElementById('loadout-modal').classList.add('active');
 }
 
 function closeLoadout() {
-  _mpPendingStart = null;
+  // Don't wipe _mpPendingStart here — confirmLoadout needs it
   document.getElementById('loadout-modal').classList.remove('active');
 }
 
@@ -6635,14 +6640,17 @@ function mpStartGame() {
 }
 
 function mpStartGameAsHost(data) {
-  broadcastMPData({ type: 'start_game', ...data });
+  // broadcast already sent by confirmLoadout — don't send again
   selDiff = data.diff || selDiff;
   selMode = data.mode || selMode;
   document.getElementById('screen-lobby').classList.remove('active');
+  document.getElementById('screen-mp').classList.remove('active');
   startGame(data.mapKey || Object.keys(MAPS)[0]);
+  // Set MP flags AFTER startGame (initGame resets them)
   G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
   G._mpIncomeApplied = false;
   showMPChatTab();
+  toast('🎮 Game started! Host · ' + mpPlayers.length + ' players');
 }
 
 function mpStartGameAsGuest(data) {
