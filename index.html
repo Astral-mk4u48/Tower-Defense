@@ -6816,8 +6816,8 @@ handleClick = function(cx, cy) {
   const { c, r } = cvCoords(cx, cy);
   if (c<0||c>=COLS||r<0||r>=ROWS) return;
   if (G.selTower) {
-    mpSendInput('place', { c, r });
     mpSendInput('select_tower', { towerId: G.selTower });
+    mpSendInput('place', { c, r });
   } else {
     const tw = G.towers.find(t=>t.c===c&&t.r===r);
     if (tw) { G.selPlaced = tw; showTowerInfo(tw); }
