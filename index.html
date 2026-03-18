@@ -1446,78 +1446,144 @@ body:has(#screen-game.active) #theme-switcher { opacity: 0; pointer-events: none
 
 <!-- ═══════════════════════ MULTIPLAYER SCREEN ═══════════════════════ -->
 <div id="screen-mp" class="screen" style="flex-direction:column;align-items:center;overflow-y:auto;padding:24px 16px 72px;background:var(--bg);">
-  <div id="menu-bg3" style="position:fixed;inset:0;z-index:0;background:var(--menu-bg,radial-gradient(ellipse at 50% 30%,#0a0f2a 0%,#04060f 60%));opacity:.85;pointer-events:none;"></div>
-  <div style="position:relative;z-index:1;width:100%;max-width:860px;">
-    <div style="display:flex;align-items:center;gap:12px;margin-bottom:18px;">
+  <div style="position:fixed;inset:0;z-index:0;background:var(--menu-bg,radial-gradient(ellipse at 50% 30%,#0a0f2a 0%,#04060f 60%));opacity:.85;pointer-events:none;"></div>
+  <div style="position:relative;z-index:1;width:100%;max-width:900px;">
+
+    <!-- Header -->
+    <div style="display:flex;align-items:center;gap:12px;margin-bottom:20px;">
       <button onclick="showMenu()" style="padding:6px 14px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;">← BACK</button>
       <div style="font-family:'Orbitron',monospace;font-size:18px;font-weight:900;letter-spacing:4px;color:var(--green);">👥 MULTIPLAYER</div>
       <div style="margin-left:auto;display:flex;align-items:center;gap:8px;">
-        <span style="font-size:11px;color:var(--text2);font-family:'Orbitron',monospace;">NAME:</span>
-        <input id="mp-name-input" maxlength="16" placeholder="Warrior" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;border-radius:6px;padding:5px 10px;width:110px;outline:none;" oninput="saveMPName(this.value)">
+        <span style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;">NAME</span>
+        <input id="mp-name-input" maxlength="16" placeholder="Warrior" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;border-radius:6px;padding:5px 10px;width:120px;outline:none;" oninput="saveMPName(this.value)">
       </div>
     </div>
 
-    <div style="background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:var(--radius2);padding:14px 16px;margin-bottom:16px;">
-      <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:var(--text2);margin-bottom:10px;">⚔️ YOUR ROLE</div>
-      <div id="role-row" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(120px,1fr));gap:8px;"></div>
-    </div>
+    <!-- Create + Join row -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:16px;margin-bottom:20px;">
 
-    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px;margin-bottom:20px;" id="mp-main-panels">
-      <!-- CREATE ROOM -->
-      <div style="background:rgba(57,255,160,.04);border:1px solid rgba(57,255,160,.25);border-radius:var(--radius2);padding:18px;">
-        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:14px;">🏠 CREATE ROOM</div>
+      <!-- CREATE -->
+      <div style="background:rgba(57,255,160,.04);border:1px solid rgba(57,255,160,.25);border-radius:var(--radius2);padding:20px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--green);margin-bottom:14px;">🏠 CREATE SERVER</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">MAP</label>
-          <select id="mp-map-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:6px 8px;width:100%;outline:none;cursor:pointer;"></select>
-          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:4px;">DIFFICULTY</label>
-          <select id="mp-diff-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:6px 8px;width:100%;outline:none;cursor:pointer;">
+          <label style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">MAP</label>
+          <select id="mp-map-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:7px 10px;width:100%;outline:none;cursor:pointer;"></select>
+          <label style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:2px;">DIFFICULTY</label>
+          <select id="mp-diff-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:10px;border-radius:6px;padding:7px 10px;width:100%;outline:none;cursor:pointer;">
             <option value="easy">🌿 EASY</option>
             <option value="normal" selected>⚔️ NORMAL</option>
             <option value="hard">🔥 HARD</option>
             <option value="nightmare">💀 NIGHTMARE</option>
           </select>
-          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:4px;">VISIBILITY</label>
+          <label style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:2px;">VISIBILITY</label>
           <div style="display:flex;gap:6px;">
-            <button class="mp-vis-btn active" id="vis-private" onclick="setVisibility('private')" style="flex:1;padding:7px;border:1px solid rgba(57,255,160,.4);background:rgba(57,255,160,.1);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🔒 PRIVATE</button>
-            <button class="mp-vis-btn" id="vis-public" onclick="setVisibility('public')" style="flex:1;padding:7px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🌐 PUBLIC</button>
+            <button id="vis-private" onclick="setVisibility('private')" style="flex:1;padding:8px;border:1px solid rgba(57,255,160,.4);background:rgba(57,255,160,.1);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🔒 PRIVATE</button>
+            <button id="vis-public"  onclick="setVisibility('public')"  style="flex:1;padding:8px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">🌐 PUBLIC</button>
           </div>
-          <button onclick="createRoom()" style="width:100%;padding:11px;border:1px solid var(--green);background:rgba(57,255,160,.08);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">⚡ CREATE SERVER</button>
-        </div>
-        <div id="mp-room-created" style="display:none;margin-top:14px;text-align:center;">
-          <div style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:6px;">YOUR ROOM CODE</div>
-          <div id="mp-room-code-display" style="font-family:'Orbitron',monospace;font-size:32px;font-weight:900;color:var(--cyan);letter-spacing:8px;text-shadow:0 0 20px rgba(0,232,255,.5);"></div>
-          <div style="font-size:10px;color:var(--text2);margin-top:6px;">Share this with friends!</div>
-          <div id="mp-player-list" style="margin-top:12px;display:flex;flex-direction:column;gap:4px;"></div>
-          <button onclick="mpStartGame()" id="mp-start-btn" style="margin-top:12px;width:100%;padding:10px;border:1px solid var(--gold);background:rgba(245,200,66,.08);color:var(--gold);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;">▶ START GAME</button>
+          <button onclick="createRoom()" style="width:100%;padding:12px;border:1px solid var(--green);background:rgba(57,255,160,.08);color:var(--green);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;margin-top:4px;transition:background .15s;" onmouseover="this.style.background='rgba(57,255,160,.18)'" onmouseout="this.style.background='rgba(57,255,160,.08)'">⚡ CREATE SERVER</button>
         </div>
       </div>
 
-      <!-- JOIN ROOM -->
-      <div style="background:rgba(0,232,255,.03);border:1px solid rgba(0,232,255,.2);border-radius:var(--radius2);padding:18px;">
-        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:14px;">🔗 JOIN ROOM</div>
+      <!-- JOIN -->
+      <div style="background:rgba(0,232,255,.03);border:1px solid rgba(0,232,255,.2);border-radius:var(--radius2);padding:20px;">
+        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--cyan);margin-bottom:14px;">🔗 JOIN SERVER</div>
         <div style="display:flex;flex-direction:column;gap:8px;">
-          <label style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">ENTER 6-CHAR CODE</label>
-          <input id="mp-join-code" maxlength="6" placeholder="ABC123" style="background:rgba(255,255,255,.06);border:1px solid var(--border2);color:var(--cyan);font-family:'Orbitron',monospace;font-size:22px;font-weight:900;border-radius:8px;padding:10px 14px;letter-spacing:6px;text-transform:uppercase;outline:none;width:100%;" oninput="this.value=this.value.toUpperCase()">
-          <button onclick="joinRoom()" style="width:100%;padding:11px;border:1px solid var(--cyan);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">🔗 JOIN SERVER</button>
-        </div>
-        <div id="mp-join-status" style="margin-top:10px;font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;text-align:center;min-height:18px;"></div>
-        <!-- Guest lobby — shown after joining -->
-        <div id="mp-guest-lobby" style="display:none;margin-top:14px;text-align:center;">
-          <div style="font-size:10px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:8px;">PLAYERS IN ROOM</div>
-          <div id="mp-player-list-guest" style="display:flex;flex-direction:column;gap:4px;margin-bottom:10px;"></div>
-          <div style="font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;">⏳ Waiting for host to start…</div>
+          <label style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;">6-CHARACTER ROOM CODE</label>
+          <input id="mp-join-code" maxlength="6" placeholder="ABC123" style="background:rgba(0,232,255,.05);border:1px solid rgba(0,232,255,.3);color:var(--cyan);font-family:'Orbitron',monospace;font-size:26px;font-weight:900;border-radius:8px;padding:12px 14px;letter-spacing:8px;text-transform:uppercase;outline:none;width:100%;text-align:center;" oninput="this.value=this.value.toUpperCase()">
+          <button onclick="joinRoom()" style="width:100%;padding:12px;border:1px solid var(--cyan);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:12px;font-weight:700;letter-spacing:2px;margin-top:4px;transition:background .15s;" onmouseover="this.style.background='rgba(0,232,255,.18)'" onmouseout="this.style.background='rgba(0,232,255,.08)'">🔗 JOIN SERVER</button>
+          <div id="mp-join-status" style="font-size:10px;color:var(--text2);font-family:'Orbitron',monospace;text-align:center;min-height:16px;margin-top:4px;"></div>
         </div>
       </div>
     </div>
 
-    <!-- PUBLIC SERVER LIST -->
+    <!-- Public server list -->
     <div style="background:rgba(255,255,255,.02);border:1px solid var(--border2);border-radius:var(--radius2);padding:16px;">
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
-        <div style="font-family:'Orbitron',monospace;font-size:11px;letter-spacing:3px;color:var(--text2);">🌐 PUBLIC SERVERS</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-family:'Orbitron',monospace;font-size:10px;letter-spacing:3px;color:var(--text2);">🌐 PUBLIC SERVERS</div>
         <button onclick="refreshServerList()" style="padding:4px 12px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">↺ REFRESH</button>
       </div>
-      <div id="mp-server-list" style="display:flex;flex-direction:column;gap:6px;min-height:60px;">
-        <div style="text-align:center;color:var(--text3);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;padding:20px;">NO PUBLIC SERVERS FOUND</div>
+      <div id="mp-server-list" style="display:flex;flex-direction:column;gap:6px;min-height:48px;">
+        <div style="text-align:center;color:var(--text3);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:2px;padding:16px;">NO PUBLIC SERVERS FOUND</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════ LOBBY SCREEN (host + guest) ═══════════════════════ -->
+<div id="screen-lobby" class="screen" style="flex-direction:row;background:var(--bg);overflow:hidden;">
+  <div style="position:fixed;inset:0;z-index:0;background:var(--menu-bg,radial-gradient(ellipse at 50% 30%,#0a0f2a 0%,#04060f 60%));opacity:.7;pointer-events:none;"></div>
+
+  <!-- LEFT: Player list + game settings (host) / role picker (guest) -->
+  <div style="position:relative;z-index:1;width:280px;min-width:240px;display:flex;flex-direction:column;border-right:1px solid var(--border2);background:rgba(0,0,0,.3);">
+
+    <!-- Logo / header -->
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;">
+      <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">✕ LEAVE</button>
+      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">LOBBY</div>
+      <div id="lobby-code-badge" style="margin-left:auto;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 12px rgba(0,232,255,.4);"></div>
+    </div>
+
+    <!-- Players -->
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border2);">
+      <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--text3);margin-bottom:8px;">PLAYERS</div>
+      <div id="lobby-player-list" style="display:flex;flex-direction:column;gap:6px;"></div>
+    </div>
+
+    <!-- Host settings OR guest role picker -->
+    <div style="flex:1;overflow-y:auto;padding:12px 14px;">
+
+      <!-- HOST SETTINGS (only shown to host) -->
+      <div id="lobby-host-settings" style="display:none;flex-direction:column;gap:10px;">
+        <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--text3);margin-bottom:4px;">GAME SETTINGS</div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-bottom:4px;">MAP</div>
+          <select id="lobby-map-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:9px;border-radius:5px;padding:6px 8px;width:100%;outline:none;cursor:pointer;" onchange="broadcastLobbySettings()"></select>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-bottom:4px;">DIFFICULTY</div>
+          <select id="lobby-diff-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:9px;border-radius:5px;padding:6px 8px;width:100%;outline:none;cursor:pointer;" onchange="broadcastLobbySettings()">
+            <option value="easy">🌿 EASY</option>
+            <option value="normal" selected>⚔️ NORMAL</option>
+            <option value="hard">🔥 HARD</option>
+            <option value="nightmare">💀 NIGHTMARE</option>
+          </select>
+        </div>
+        <div>
+          <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-bottom:4px;">MODE</div>
+          <select id="lobby-mode-select" style="background:var(--bg2);border:1px solid var(--border2);color:var(--text);font-family:'Orbitron',monospace;font-size:9px;border-radius:5px;padding:6px 8px;width:100%;outline:none;cursor:pointer;" onchange="broadcastLobbySettings()">
+            <option value="casual">CASUAL (40 waves)</option>
+            <option value="intermediate">INTERMEDIATE (60 waves)</option>
+            <option value="molten">MOLTEN (80 waves)</option>
+            <option value="fallen">FALLEN (100 waves)</option>
+          </select>
+        </div>
+        <button onclick="mpStartGame()" id="lobby-start-btn" style="width:100%;padding:11px;border:1px solid var(--gold);background:rgba(245,200,66,.08);color:var(--gold);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;margin-top:4px;">▶ START GAME</button>
+      </div>
+
+      <!-- GAME INFO (shown to guests) -->
+      <div id="lobby-guest-settings" style="display:none;flex-direction:column;gap:8px;">
+        <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--text3);margin-bottom:4px;">GAME INFO</div>
+        <div id="lobby-settings-display" style="font-size:11px;color:var(--text2);line-height:1.9;"></div>
+        <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;margin-top:4px;text-align:center;">⏳ Waiting for host to start…</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- RIGHT: Role picker + Chat -->
+  <div style="position:relative;z-index:1;flex:1;display:flex;flex-direction:column;overflow:hidden;">
+
+    <!-- Role picker -->
+    <div style="padding:14px 16px;border-bottom:1px solid var(--border2);">
+      <div style="font-family:'Orbitron',monospace;font-size:8px;letter-spacing:3px;color:var(--text3);margin-bottom:10px;">⚔️ CHOOSE YOUR ROLE</div>
+      <div id="lobby-role-grid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:8px;"></div>
+    </div>
+
+    <!-- Chat -->
+    <div style="flex:1;display:flex;flex-direction:column;overflow:hidden;">
+      <div id="lobby-chat-log" style="flex:1;overflow-y:auto;padding:10px 14px;display:flex;flex-direction:column;gap:4px;"></div>
+      <div style="padding:8px 14px;border-top:1px solid var(--border2);display:flex;gap:8px;">
+        <input id="lobby-chat-input" placeholder="Say something…" maxlength="100" style="flex:1;background:rgba(255,255,255,.05);border:1px solid var(--border2);color:var(--text);font-family:'Rajdhani',sans-serif;font-size:12px;border-radius:6px;padding:7px 10px;outline:none;" onkeydown="if(event.key==='Enter')sendLobbyChat()">
+        <button onclick="sendLobbyChat()" style="padding:7px 14px;border:1px solid var(--border2);background:var(--bg2);color:var(--text2);cursor:pointer;border-radius:6px;font-family:'Orbitron',monospace;font-size:9px;">SEND</button>
       </div>
     </div>
   </div>
@@ -4096,6 +4162,7 @@ function goMenu() {
   const chatBtn = document.getElementById('tab-chat-btn');
   if (chatBtn) chatBtn.style.display = 'none';
 
+  document.getElementById('screen-lobby')?.classList.remove('active');
   document.getElementById('screen-game').classList.remove('active');
   document.getElementById('ov-lose').classList.remove('active');
   document.getElementById('ov-win').classList.remove('active');
@@ -6145,30 +6212,174 @@ function mpLog(msg) {
   if (el) el.textContent = msg;
 }
 
+// ── Lobby screen open/close ───────────────────────────────────
+function openLobby(asHost) {
+  // Hide MP search screen, show lobby
+  document.getElementById('screen-mp').classList.remove('active');
+  document.getElementById('screen-lobby').classList.add('active');
+
+  // Show code badge
+  document.getElementById('lobby-code-badge').textContent = mpRoomCode;
+
+  // Show host settings or guest info panel
+  const hostPanel  = document.getElementById('lobby-host-settings');
+  const guestPanel = document.getElementById('lobby-guest-settings');
+  if (asHost) {
+    hostPanel.style.display  = 'flex';
+    guestPanel.style.display = 'none';
+    // Populate map select
+    const mapSel = document.getElementById('lobby-map-select');
+    if (mapSel && mapSel.options.length === 0) {
+      Object.entries(MAPS).forEach(([key, m]) => {
+        const opt = document.createElement('option');
+        opt.value = key; opt.textContent = `${m.icon} ${m.name}`;
+        mapSel.appendChild(opt);
+      });
+    }
+  } else {
+    hostPanel.style.display  = 'none';
+    guestPanel.style.display = 'flex';
+  }
+
+  // Build role grid
+  buildLobbyRoleGrid();
+  // Update player list
+  updateLobbyPlayers();
+  // Welcome message in lobby chat
+  appendLobbyChat('🎮 SYSTEM', asHost ? `Room ${mpRoomCode} created! Share the code.` : `Joined room ${mpRoomCode}! Waiting for host…`, '#39ffa0');
+}
+
+function leaveLobby() {
+  if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
+  mpConns = []; mpIsHost = false; mpRoomCode = ''; mpPlayers = [];
+  document.getElementById('screen-lobby').classList.remove('active');
+  // Clear lobby chat
+  const log = document.getElementById('lobby-chat-log');
+  if (log) log.innerHTML = '';
+  showMultiplayer();
+}
+
+// ── Lobby player list ─────────────────────────────────────────
+function updateLobbyPlayers() {
+  const el = document.getElementById('lobby-player-list');
+  if (!el) return;
+  el.innerHTML = mpPlayers.map((p, i) => {
+    const role = ROLES.find(r => r.id === (p.role || 'allround'));
+    return `
+      <div style="display:flex;align-items:center;gap:8px;padding:7px 10px;background:${p.color}11;border:1px solid ${p.color}33;border-radius:var(--radius);">
+        <span style="font-size:16px;">${i === 0 ? '👑' : '👤'}</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-family:'Orbitron',monospace;font-size:10px;font-weight:700;color:${p.color};overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${p.name}</div>
+          <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;">${role ? role.icon + ' ' + role.name : '⭐ ALL-ROUND'}</div>
+        </div>
+        ${i === 0 ? '<span style="font-size:8px;font-family:Orbitron,monospace;color:var(--gold);">HOST</span>' : ''}
+      </div>`;
+  }).join('');
+
+  // Also update in-game chat players
+  const ingame = document.getElementById('mp-chat-players');
+  if (ingame) ingame.innerHTML = el.innerHTML;
+
+  // Update start button
+  const btn = document.getElementById('lobby-start-btn');
+  if (btn) btn.textContent = mpPlayers.length > 1
+    ? `▶ START (${mpPlayers.length} players)`
+    : '▶ START GAME';
+}
+
+// ── Lobby role grid ───────────────────────────────────────────
+function buildLobbyRoleGrid() {
+  const grid = document.getElementById('lobby-role-grid');
+  if (!grid) return;
+  const myRole = PLAYER.selectedRole || 'allround';
+  grid.innerHTML = '';
+  ROLES.forEach(role => {
+    const active = myRole === role.id;
+    const card = document.createElement('div');
+    card.className = 'role-card' + (active ? ' active' : '');
+    card.style.cssText = `cursor:pointer;${active ? 'border-color:' + role.color + ';background:' + role.color + '11;' : ''}`;
+    card.innerHTML = `
+      <span class="rc-icon" style="font-size:22px;">${role.icon}</span>
+      <div class="rc-name" style="color:${role.color};font-size:9px;">${role.name}</div>
+      <div class="rc-towers" style="margin-top:4px;font-size:12px;">${role.towers.map(t => TDEFS.find(d => d.id===t)?.icon || '').join(' ')}</div>
+      <div style="font-size:8px;color:var(--text3);margin-top:3px;line-height:1.3;">${role.bonus}</div>
+    `;
+    card.onclick = () => {
+      PLAYER.selectedRole = role.id;
+      savePlayer();
+      buildLobbyRoleGrid();
+      // Broadcast our role update to host/guests
+      const msg = { type: 'role_update', playerId: mpPeer?.id, role: role.id };
+      if (mpIsHost) {
+        // Update our own entry
+        const me = mpPlayers.find(p => p.isHost);
+        if (me) { me.role = role.id; broadcastMPData({ type: 'players_update', players: mpPlayers }); }
+        updateLobbyPlayers();
+      } else if (mpConns[0]) {
+        try { mpConns[0].send(msg); } catch(e){}
+      }
+      toast(`⚔️ Role: ${role.name}`);
+    };
+    grid.appendChild(card);
+  });
+}
+
+// ── Lobby chat ────────────────────────────────────────────────
+function appendLobbyChat(name, text, color) {
+  const log = document.getElementById('lobby-chat-log');
+  if (!log) return;
+  const div = document.createElement('div');
+  div.className = 'chat-msg';
+  div.innerHTML = `<span class="cm-name" style="color:${color || 'var(--cyan)'};">${name}: </span><span class="cm-text">${text}</span>`;
+  log.appendChild(div);
+  log.scrollTop = log.scrollHeight;
+  while (log.children.length > 100) log.removeChild(log.firstChild);
+}
+
+function sendLobbyChat() {
+  const input = document.getElementById('lobby-chat-input');
+  if (!input?.value.trim()) return;
+  const text = input.value.trim();
+  input.value = '';
+  const me = mpPlayers[mpIsHost ? 0 : mpPlayers.findIndex(p => !p.isHost && p.id === mpPeer?.id)] || { name: getMPName(), color: MP_COLORS[1] };
+  const msg = { type: 'lobby_chat', name: me.name, text, color: me.color };
+  appendLobbyChat(me.name, text, me.color);
+  if (mpIsHost) broadcastMPData(msg);
+  else if (mpConns[0]) try { mpConns[0].send(msg); } catch(e){}
+  PLAYER.chatCount = (PLAYER.chatCount||0) + 1; savePlayer(); checkAchievements();
+}
+
+// Host broadcasts current settings to all guests
+function broadcastLobbySettings() {
+  if (!mpIsHost) return;
+  const mapKey = document.getElementById('lobby-map-select')?.value || Object.keys(MAPS)[0];
+  const diff   = document.getElementById('lobby-diff-select')?.value || 'normal';
+  const mode   = document.getElementById('lobby-mode-select')?.value || 'casual';
+  broadcastMPData({ type: 'lobby_settings', mapKey, diff, mode });
+}
+
+// Guest receives and displays host's settings
+function applyLobbySettings(data) {
+  const map = MAPS[data.mapKey];
+  const el = document.getElementById('lobby-settings-display');
+  if (el) el.innerHTML = `
+    <b style="color:var(--text)">${map?.icon || '🗺️'} ${map?.name || data.mapKey}</b><br>
+    Difficulty: <span style="color:var(--gold)">${data.diff?.toUpperCase()}</span><br>
+    Mode: <span style="color:var(--cyan)">${data.mode?.toUpperCase()}</span>
+  `;
+}
+
+// ── Updated player list ───────────────────────────────────────
 function updateMPPlayerList() {
+  updateLobbyPlayers();
+  // Legacy: also keep in-game chat list updated
   const html = mpPlayers.map((p, i) => `
     <div class="mp-player-pill" style="color:${p.color};border-color:${p.color}44;background:${p.color}11;margin:2px 0;">
       ${i === 0 ? '👑' : '👤'} ${p.name}${p.isHost ? ' (HOST)' : ''}
     </div>
   `).join('');
-  // Host lobby list
-  const lobby = document.getElementById('mp-player-list');
-  if (lobby) lobby.innerHTML = html;
-  // Guest lobby list + show section
-  const guestLobby = document.getElementById('mp-player-list-guest');
-  if (guestLobby) guestLobby.innerHTML = html;
-  if (!mpIsHost && mpPlayers.length > 0) {
-    const sec = document.getElementById('mp-guest-lobby');
-    if (sec) sec.style.display = '';
-  }
-  // In-game chat player list
   const ingame = document.getElementById('mp-chat-players');
   if (ingame) ingame.innerHTML = html;
-  // Start button
-  const startBtn = document.getElementById('mp-start-btn');
-  if (startBtn) startBtn.textContent = mpPlayers.length > 1
-    ? `▶ START GAME (${mpPlayers.length} players)`
-    : '▶ START GAME (waiting for players…)';
 }
 
 function showMultiplayer() {
@@ -6235,11 +6446,7 @@ function createRoom() {
     mpPeer = new Peer('wsroom-' + code, { debug: 1 });
 
     mpPeer.on('open', id => {
-      document.getElementById('mp-room-created').style.display = '';
-      document.getElementById('mp-room-code-display').textContent = code;
-      updateMPPlayerList();
-      toast('🏠 Room ' + code + ' ready! Share this code.');
-
+      openLobby(true);
       if (mpVisibility === 'public') {
         registerPublicRoom(code);
         PLAYER.publicHosted = (PLAYER.publicHosted||0) + 1;
@@ -6267,10 +6474,16 @@ function createRoom() {
 
             // Tell everyone the updated list
             broadcastMPData({ type: 'players_update', players: mpPlayers });
-            // Also send directly to the new joiner (they may not be in broadcast yet)
+            // Also send directly to the new joiner
             try { conn.send({ type: 'players_update', players: mpPlayers }); } catch(e){}
+            // Send current lobby settings to new joiner
+            const mapKey = document.getElementById('lobby-map-select')?.value || Object.keys(MAPS)[0];
+            const diff   = document.getElementById('lobby-diff-select')?.value || 'normal';
+            const mode   = document.getElementById('lobby-mode-select')?.value || 'casual';
+            try { conn.send({ type: 'lobby_settings', mapKey, diff, mode }); } catch(e){}
 
-            updateMPPlayerList();
+            updateLobbyPlayers();
+            appendLobbyChat('🎮 SYSTEM', player.name + ' joined the lobby!', '#39ffa0');
             toast('👤 ' + player.name + ' joined!');
           }
           // Relay all other data types through normal handler
@@ -6279,10 +6492,13 @@ function createRoom() {
 
         conn.on('close', () => {
           const p = mpPlayers.find(p => p.id === conn.peer);
-          if (p) toast('👤 ' + p.name + ' left');
+          if (p) {
+            appendLobbyChat('🎮 SYSTEM', p.name + ' left the lobby.', '#ff6644');
+            toast('👤 ' + p.name + ' left');
+          }
           mpConns = mpConns.filter(c => c !== conn);
           mpPlayers = mpPlayers.filter(p => p.id !== conn.peer);
-          updateMPPlayerList();
+          updateLobbyPlayers();
           broadcastMPData({ type: 'players_update', players: mpPlayers });
         });
 
@@ -6319,8 +6535,8 @@ function joinRoom() {
         // Introduce ourselves
         conn.send({ type: 'join', name: getMPName() });
         mpConns = [conn];
-        mpLog('✅ Joined! Waiting for host…');
-        toast('🔗 Joined room ' + code + '!');
+        mpLog('✅ Joined! Opening lobby…');
+        openLobby(false);
 
         conn.on('data', data => handleMPData(data, conn));
 
@@ -6353,12 +6569,29 @@ function handleMPData(data, conn) {
   switch (data.type) {
 
     case 'players_update':
-      // Sync the lobby player list on all clients
       mpPlayers = data.players;
-      updateMPPlayerList();
-      // Show lobby section if guest hasn't seen it yet
-      const lobbySection = document.getElementById('mp-guest-lobby');
-      if (lobbySection) lobbySection.style.display = '';
+      updateLobbyPlayers();
+      // Show lobby if not already there
+      if (!document.getElementById('screen-lobby').classList.contains('active')) {
+        // do nothing — lobby already handled at join
+      }
+      break;
+
+    case 'lobby_settings':
+      if (!mpIsHost) applyLobbySettings(data);
+      break;
+
+    case 'lobby_chat':
+      appendLobbyChat(data.name, data.text, data.color);
+      if (mpIsHost) broadcastMPData(data); // relay
+      break;
+
+    case 'role_update':
+      // A guest updated their role — find them and update
+      if (mpIsHost) {
+        const p = mpPlayers.find(pl => pl.id === data.playerId);
+        if (p) { p.role = data.role; updateLobbyPlayers(); broadcastMPData({ type: 'players_update', players: mpPlayers }); }
+      }
       break;
 
     case 'start_game':
@@ -6392,40 +6625,32 @@ function broadcastMPData(data) {
 // ── Start game (host) ──────────────────────────────────────────
 function mpStartGame() {
   if (!mpIsHost) return;
-  const mapKey = document.getElementById('mp-map-select')?.value || Object.keys(MAPS)[0];
-  const diff   = document.getElementById('mp-diff-select')?.value || 'normal';
-  const mode   = selMode || 'casual';
+  const mapKey = document.getElementById('lobby-map-select')?.value || Object.keys(MAPS)[0];
+  const diff   = document.getElementById('lobby-diff-select')?.value || 'normal';
+  const mode   = document.getElementById('lobby-mode-select')?.value || 'casual';
   _mpPendingStart = { mapKey, diff, mode };
   openLoadout(mapKey);
 }
 
 function mpStartGameAsHost(data) {
-  // Tell guests to start
   broadcastMPData({ type: 'start_game', ...data });
-  // Set diff/mode from selection
   selDiff = data.diff || selDiff;
   selMode = data.mode || selMode;
-  // Start locally — then set MP flags AFTER initGame runs
+  document.getElementById('screen-lobby').classList.remove('active');
   startGame(data.mapKey || Object.keys(MAPS)[0]);
   G.isMP = true; G.mpHost = true; G.mpPlayers = mpPlayers;
   G._mpIncomeApplied = false;
   showMPChatTab();
 }
 
-// ── Start game (guest) ─────────────────────────────────────────
 function mpStartGameAsGuest(data) {
-  // Switch away from MP screen to the game
+  document.getElementById('screen-lobby').classList.remove('active');
   document.getElementById('screen-mp').classList.remove('active');
-  // Start the game locally (for rendering)
   startGame(data.mapKey || Object.keys(MAPS)[0]);
-  // Set MP flags AFTER initGame so they don't get wiped
   G.isMP = true; G.mpHost = false; G.mpPlayers = mpPlayers;
   G._mpIncomeApplied = false;
-  // Guests don't run their own wave/enemy logic — pause local wave control
   G.waveOn = false;
-  // Show chat
   showMPChatTab();
-  // Update achievements
   PLAYER.mpGames = (PLAYER.mpGames||0) + 1; savePlayer(); checkAchievements();
   toast('🎮 Game started! ' + mpPlayers.length + ' players');
 }
