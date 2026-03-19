@@ -1520,18 +1520,19 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
   <div style="position:relative;z-index:1;width:280px;min-width:240px;display:flex;flex-direction:column;border-right:1px solid var(--border2);background:rgba(0,0,0,.3);">
 
     <!-- Logo / header -->
-    <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border2);">
-      <!-- Top row: leave + title -->
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
-        <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">✕ LEAVE</button>
-        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">LOBBY</div>
+    <div style="padding:12px 14px;border-bottom:1px solid var(--border2);">
+      <!-- Row 1: leave + title -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:10px;">
+        <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;flex-shrink:0;">✕ LEAVE</button>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">👥 LOBBY</div>
       </div>
-      <!-- Bottom row: room code + copy button -->
-      <div style="display:flex;align-items:center;gap:8px;background:rgba(0,232,255,.04);border:1px solid rgba(0,232,255,.2);border-radius:var(--radius);padding:7px 10px;">
-        <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;flex-shrink:0;">ROOM</div>
-        <div id="lobby-code-badge" style="flex:1;font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--cyan);letter-spacing:6px;text-shadow:0 0 12px rgba(0,232,255,.5);text-align:center;"></div>
-        <button onclick="copyLobbyLink()" style="flex-shrink:0;padding:5px 10px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.1);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;white-space:nowrap;">📋 COPY</button>
+      <!-- Row 2: big room code centered -->
+      <div style="text-align:center;margin-bottom:8px;">
+        <div style="font-size:8px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:4px;">ROOM CODE</div>
+        <div id="lobby-code-badge" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--cyan);letter-spacing:8px;text-shadow:0 0 16px rgba(0,232,255,.6);"></div>
       </div>
+      <!-- Row 3: full-width copy button -->
+      <button onclick="copyLobbyLink()" style="width:100%;padding:8px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;">📋 COPY INVITE LINK</button>
     </div>
 
     <!-- Players -->
@@ -6435,49 +6436,53 @@ function copyLobbyLink() {
   const code = mpRoomCode;
   if (!code) { toast('No room code yet'); return; }
 
-  // Build the best possible link
+  // Decide what to copy based on how the page is served
   const loc = window.location;
-  const isFileProtocol = loc.protocol === 'file:';
-  const isLocalhost = loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
+  const isLocalFile = loc.protocol === 'file:';
+  const isLocal = isLocalFile || loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
 
-  let textToCopy;
-  let successMsg;
-
-  if (!isFileProtocol && !isLocalhost) {
-    // Real hosted URL — give a full joinable link
-    const base = loc.protocol + '//' + loc.host + loc.pathname;
-    textToCopy = base + '#join=' + code;
-    successMsg = '📋 Link copied! Paste it to your friend.';
+  if (isLocal) {
+    // Can't make a real shareable URL — just copy the code
+    // and show it prominently so the user can tell their friend
+    _doCopy(code, null, '📋 Code copied: ' + code, 'Share this 6-letter code with your friend and they enter it in the JOIN box.');
   } else {
-    // Local file or localhost — just copy the code, a URL won't work cross-device
-    textToCopy = code;
-    successMsg = '📋 Code copied: ' + code + '  (share this with your friend)';
-  }
-
-  if (navigator.clipboard && navigator.clipboard.writeText) {
-    navigator.clipboard.writeText(textToCopy)
-      .then(() => toast(successMsg))
-      .catch(() => _fallbackCopy(textToCopy, successMsg));
-  } else {
-    _fallbackCopy(textToCopy, successMsg);
+    // Build a clean URL without any existing hash
+    const url = loc.protocol + '//' + loc.host + loc.pathname + '?join=' + code;
+    _doCopy(url, code, '📋 Invite link copied!', 'Send that link to your friend — opening it will auto-join the room.');
   }
 }
 
-function _fallbackCopy(text, msg) {
-  // execCommand fallback for older browsers / non-https
-  const ta = document.createElement('textarea');
-  ta.value = text;
-  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
-  document.body.appendChild(ta);
-  ta.focus(); ta.select();
-  try {
-    document.execCommand('copy');
-    toast(msg);
-  } catch(e) {
-    // Last resort: show a prompt so they can copy manually
-    window.prompt('Copy this to share:', text);
-  }
-  document.body.removeChild(ta);
+function _doCopy(primary, fallback, toastMsg, detail) {
+  // Try clipboard API first
+  const tryClipboard = (text) => {
+    return navigator.clipboard && navigator.clipboard.writeText
+      ? navigator.clipboard.writeText(text)
+      : Promise.reject('no clipboard api');
+  };
+
+  tryClipboard(primary)
+    .then(() => {
+      toast(toastMsg);
+      if (detail) console.log('[WorldSiege] ' + detail);
+    })
+    .catch(() => {
+      // execCommand fallback
+      const ta = document.createElement('textarea');
+      ta.value = primary;
+      ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;font-size:16px;';
+      document.body.appendChild(ta);
+      ta.focus(); ta.select();
+      let ok = false;
+      try { ok = document.execCommand('copy'); } catch(e) {}
+      document.body.removeChild(ta);
+      if (ok) {
+        toast(toastMsg);
+      } else {
+        // Final fallback: prompt dialog so they can copy manually
+        const shown = fallback || primary;
+        window.prompt('Copy this and share it with your friend:', shown);
+      }
+    });
 }
 
 // Host broadcasts current settings to all guests
@@ -6523,15 +6528,17 @@ function showMultiplayer() {
   if (guestLobby) guestLobby.style.display = 'none';
   const joinStatus = document.getElementById('mp-join-status');
   if (joinStatus) joinStatus.textContent = '';
-  // Auto-join from URL hash (e.g. page.html#join=ABC123)
+  // Auto-join from URL param: page.html?join=ABC123 or page.html#join=ABC123
   try {
-    const hash = window.location.hash;
-    const m = hash.match(/[#&]join=([A-Z0-9]{6})/i);
+    const search = window.location.search + window.location.hash;
+    const m = search.match(/[?&#]join=([A-Z0-9]{6})/i);
     if (m) {
       const inp = document.getElementById('mp-join-code');
       if (inp) inp.value = m[1].toUpperCase();
-      history.replaceState(null, '', window.location.pathname); // clear hash
-      setTimeout(() => joinRoom(), 400); // give screen time to render
+      // Clean URL
+      const clean = window.location.pathname;
+      history.replaceState(null, '', clean);
+      setTimeout(() => joinRoom(), 400);
     }
   } catch(e) {}
   // Populate map selector
@@ -6590,7 +6597,7 @@ function createRoom() {
     mpPeer.on('open', id => {
       openLobby(true);
       // Put room code in URL hash so host can share the link
-      try { history.replaceState(null, '', '#join=' + code); } catch(e){}
+      try { history.replaceState(null, '', '?join=' + code); } catch(e){}
       if (mpVisibility === 'public') {
         registerPublicRoom(code);
         PLAYER.publicHosted = (PLAYER.publicHosted||0) + 1;
@@ -7341,7 +7348,8 @@ refreshDailyBar();
 // Auto-join from URL hash on initial load (e.g. shared invite link)
 (function() {
   try {
-    const m = window.location.hash.match(/[#&]join=([A-Z0-9]{6})/i);
+    const _bs = window.location.search + window.location.hash;
+    const m = _bs.match(/[?&#]join=([A-Z0-9]{6})/i);
     if (m) {
       // Open MP screen and trigger join
       setTimeout(() => {
