@@ -1520,12 +1520,18 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
   <div style="position:relative;z-index:1;width:280px;min-width:240px;display:flex;flex-direction:column;border-right:1px solid var(--border2);background:rgba(0,0,0,.3);">
 
     <!-- Logo / header -->
-    <div style="padding:14px 16px;border-bottom:1px solid var(--border2);display:flex;align-items:center;gap:10px;">
-      <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">✕ LEAVE</button>
-      <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">LOBBY</div>
-      <div id="lobby-code-badge" style="margin-left:auto;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 12px rgba(0,232,255,.4);"></div>
-      <button onclick="(function(){try{const url=window.location.href.split('#')[0]+'#join='+mpRoomCode;navigator.clipboard.writeText(url).then(()=>toast('📋 Link copied! Share it to invite players')).catch(()=>{navigator.clipboard.writeText(mpRoomCode);toast('📋 Code copied: '+mpRoomCode);});}catch(e){toast('Code: '+mpRoomCode);}})()"
-        style="padding:5px 12px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.07);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">📋 COPY LINK</button>
+    <div style="padding:12px 14px 10px;border-bottom:1px solid var(--border2);">
+      <!-- Top row: leave + title -->
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+        <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">✕ LEAVE</button>
+        <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">LOBBY</div>
+      </div>
+      <!-- Bottom row: room code + copy button -->
+      <div style="display:flex;align-items:center;gap:8px;background:rgba(0,232,255,.04);border:1px solid rgba(0,232,255,.2);border-radius:var(--radius);padding:7px 10px;">
+        <div style="font-size:9px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:1px;flex-shrink:0;">ROOM</div>
+        <div id="lobby-code-badge" style="flex:1;font-family:'Orbitron',monospace;font-size:16px;font-weight:900;color:var(--cyan);letter-spacing:6px;text-shadow:0 0 12px rgba(0,232,255,.5);text-align:center;"></div>
+        <button onclick="copyLobbyLink()" style="flex-shrink:0;padding:5px 10px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.1);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;white-space:nowrap;">📋 COPY</button>
+      </div>
     </div>
 
     <!-- Players -->
@@ -6422,6 +6428,56 @@ function sendLobbyChat() {
   if (mpIsHost) broadcastMPData(msg);
   else if (mpConns[0]) try { mpConns[0].send(msg); } catch(e){}
   PLAYER.chatCount = (PLAYER.chatCount||0) + 1; savePlayer(); checkAchievements();
+}
+
+// ── Copy lobby invite link / code ────────────────────────────────────────────
+function copyLobbyLink() {
+  const code = mpRoomCode;
+  if (!code) { toast('No room code yet'); return; }
+
+  // Build the best possible link
+  const loc = window.location;
+  const isFileProtocol = loc.protocol === 'file:';
+  const isLocalhost = loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
+
+  let textToCopy;
+  let successMsg;
+
+  if (!isFileProtocol && !isLocalhost) {
+    // Real hosted URL — give a full joinable link
+    const base = loc.protocol + '//' + loc.host + loc.pathname;
+    textToCopy = base + '#join=' + code;
+    successMsg = '📋 Link copied! Paste it to your friend.';
+  } else {
+    // Local file or localhost — just copy the code, a URL won't work cross-device
+    textToCopy = code;
+    successMsg = '📋 Code copied: ' + code + '  (share this with your friend)';
+  }
+
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(textToCopy)
+      .then(() => toast(successMsg))
+      .catch(() => _fallbackCopy(textToCopy, successMsg));
+  } else {
+    _fallbackCopy(textToCopy, successMsg);
+  }
+}
+
+function _fallbackCopy(text, msg) {
+  // execCommand fallback for older browsers / non-https
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.cssText = 'position:fixed;top:-9999px;left:-9999px;opacity:0;';
+  document.body.appendChild(ta);
+  ta.focus(); ta.select();
+  try {
+    document.execCommand('copy');
+    toast(msg);
+  } catch(e) {
+    // Last resort: show a prompt so they can copy manually
+    window.prompt('Copy this to share:', text);
+  }
+  document.body.removeChild(ta);
 }
 
 // Host broadcasts current settings to all guests
