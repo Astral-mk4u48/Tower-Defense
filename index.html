@@ -1526,10 +1526,15 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
         <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;flex-shrink:0;">✕ LEAVE</button>
         <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">👥 LOBBY</div>
       </div>
-      <!-- Row 2: big room code centered -->
+      <!-- Row 2: big room code centered — tap/click to select for manual copy -->
       <div style="text-align:center;margin-bottom:8px;">
         <div style="font-size:8px;color:var(--text3);font-family:'Orbitron',monospace;letter-spacing:2px;margin-bottom:4px;">ROOM CODE</div>
-        <div id="lobby-code-badge" style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--cyan);letter-spacing:8px;text-shadow:0 0 16px rgba(0,232,255,.6);"></div>
+        <input id="lobby-code-badge" readonly onclick="this.select()"
+          style="font-family:'Orbitron',monospace;font-size:22px;font-weight:900;color:var(--cyan);
+                 letter-spacing:8px;text-shadow:0 0 16px rgba(0,232,255,.6);
+                 background:transparent;border:none;outline:none;text-align:center;
+                 width:100%;cursor:text;caret-color:transparent;"
+          value="">
       </div>
       <!-- Row 3: full-width copy button -->
       <button onclick="copyLobbyLink()" style="width:100%;padding:8px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.08);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:10px;font-weight:700;letter-spacing:1px;">📋 COPY INVITE LINK</button>
@@ -6300,7 +6305,7 @@ function openLobby(asHost) {
   document.getElementById('screen-lobby').classList.add('active');
 
   // Show code badge
-  document.getElementById('lobby-code-badge').textContent = mpRoomCode;
+  const _badge = document.getElementById('lobby-code-badge'); if (_badge) { _badge.value !== undefined ? _badge.value = mpRoomCode : _badge.textContent = mpRoomCode; }
 
   // Show host settings or guest info panel
   const hostPanel  = document.getElementById('lobby-host-settings');
@@ -6432,23 +6437,62 @@ function sendLobbyChat() {
 }
 
 // ── Copy lobby invite link / code ────────────────────────────────────────────
+function _getInviteLink(code) {
+  const loc = window.location;
+
+  // ── Google Sites / googleusercontent.com embed ────────────────────────────
+  // The game runs inside an iframe. window.location is the internal embed URL
+  // (e.g. 342049259-atari-embeds.googleusercontent.com/embeds/…).
+  // The real shareable URL is in document.referrer (the Google Sites page).
+  const isGoogleEmbed = loc.hostname.includes('googleusercontent.com') ||
+                        loc.hostname.includes('google.com');
+  if (isGoogleEmbed) {
+    // Try referrer first — it's the actual Google Sites page URL
+    try {
+      if (document.referrer && document.referrer.length > 0) {
+        const ref = new URL(document.referrer);
+        // Strip existing join param then add ours
+        ref.searchParams.set('join', code);
+        return { url: ref.toString(), isReal: true };
+      }
+    } catch(e) {}
+    // Fallback: try parent window location (may throw cross-origin)
+    try {
+      const parentUrl = new URL(window.parent.location.href);
+      parentUrl.searchParams.set('join', code);
+      return { url: parentUrl.toString(), isReal: true };
+    } catch(e) {}
+    // Can't determine parent URL — just share the code
+    return { url: null, isReal: false };
+  }
+
+  // ── Local file ────────────────────────────────────────────────────────────
+  if (loc.protocol === 'file:') return { url: null, isReal: false };
+
+  // ── localhost / dev ───────────────────────────────────────────────────────
+  if (loc.hostname === 'localhost' || loc.hostname === '127.0.0.1')
+    return { url: null, isReal: false };
+
+  // ── Normal hosted page ────────────────────────────────────────────────────
+  const base = loc.protocol + '//' + loc.host + loc.pathname;
+  return { url: base + '?join=' + code, isReal: true };
+}
+
 function copyLobbyLink() {
   const code = mpRoomCode;
   if (!code) { toast('No room code yet'); return; }
 
-  // Decide what to copy based on how the page is served
-  const loc = window.location;
-  const isLocalFile = loc.protocol === 'file:';
-  const isLocal = isLocalFile || loc.hostname === 'localhost' || loc.hostname === '127.0.0.1';
+  const { url, isReal } = _getInviteLink(code);
 
-  if (isLocal) {
-    // Can't make a real shareable URL — just copy the code
-    // and show it prominently so the user can tell their friend
-    _doCopy(code, null, '📋 Code copied: ' + code, 'Share this 6-letter code with your friend and they enter it in the JOIN box.');
+  if (isReal && url) {
+    _doCopy(url, code,
+      '📋 Invite link copied! Send it to your friend.',
+      url);
   } else {
-    // Build a clean URL without any existing hash
-    const url = loc.protocol + '//' + loc.host + loc.pathname + '?join=' + code;
-    _doCopy(url, code, '📋 Invite link copied!', 'Send that link to your friend — opening it will auto-join the room.');
+    // Can't build a real URL — copy just the code and explain
+    _doCopy(code, null,
+      '📋 Code copied: ' + code + ' — friend enters this in the JOIN box',
+      code);
   }
 }
 
@@ -6529,15 +6573,16 @@ function showMultiplayer() {
   const joinStatus = document.getElementById('mp-join-status');
   if (joinStatus) joinStatus.textContent = '';
   // Auto-join from URL param: page.html?join=ABC123 or page.html#join=ABC123
+  // Also works in Google Sites embeds where the param is forwarded to the iframe URL
   try {
     const search = window.location.search + window.location.hash;
     const m = search.match(/[?&#]join=([A-Z0-9]{6})/i);
     if (m) {
+      const code = m[1].toUpperCase();
       const inp = document.getElementById('mp-join-code');
-      if (inp) inp.value = m[1].toUpperCase();
-      // Clean URL
-      const clean = window.location.pathname;
-      history.replaceState(null, '', clean);
+      if (inp) inp.value = code;
+      // Clean URL — use try/catch since cross-origin iframes may block this
+      try { history.replaceState(null, '', window.location.pathname); } catch(e) {}
       setTimeout(() => joinRoom(), 400);
     }
   } catch(e) {}
@@ -7345,17 +7390,18 @@ updateShardDisplays();
 startMenuParticles();
 refreshDailyBar();
 
-// Auto-join from URL hash on initial load (e.g. shared invite link)
+// Auto-join from URL param on initial load — works on normal hosting + Google Sites
 (function() {
   try {
     const _bs = window.location.search + window.location.hash;
     const m = _bs.match(/[?&#]join=([A-Z0-9]{6})/i);
     if (m) {
-      // Open MP screen and trigger join
+      // Pre-fill the code so showMultiplayer can pick it up
+      const inp = document.getElementById('mp-join-code');
+      if (inp) inp.value = m[1].toUpperCase();
       setTimeout(() => {
-        showMultiplayer();
-        // showMultiplayer will auto-detect the hash and join
-      }, 800);
+        showMultiplayer(); // will detect the pre-filled code and join
+      }, 900);
     }
   } catch(e) {}
 })();
