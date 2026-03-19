@@ -1524,6 +1524,8 @@ body:has(#screen-lobby.active) #theme-switcher { opacity: 0; pointer-events: non
       <button onclick="leaveLobby()" style="padding:4px 10px;border:1px solid rgba(255,45,85,.35);background:rgba(255,45,85,.07);color:var(--red);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;">✕ LEAVE</button>
       <div style="font-family:'Orbitron',monospace;font-size:11px;font-weight:700;letter-spacing:2px;color:var(--green);">LOBBY</div>
       <div id="lobby-code-badge" style="margin-left:auto;font-family:'Orbitron',monospace;font-size:13px;font-weight:900;color:var(--cyan);letter-spacing:4px;text-shadow:0 0 12px rgba(0,232,255,.4);"></div>
+      <button onclick="(function(){try{const url=window.location.href.split('#')[0]+'#join='+mpRoomCode;navigator.clipboard.writeText(url).then(()=>toast('📋 Link copied! Share it to invite players')).catch(()=>{navigator.clipboard.writeText(mpRoomCode);toast('📋 Code copied: '+mpRoomCode);});}catch(e){toast('Code: '+mpRoomCode);}})()"
+        style="padding:5px 12px;border:1px solid rgba(0,232,255,.4);background:rgba(0,232,255,.07);color:var(--cyan);cursor:pointer;border-radius:var(--radius);font-family:'Orbitron',monospace;font-size:9px;letter-spacing:1px;">📋 COPY LINK</button>
     </div>
 
     <!-- Players -->
@@ -4200,7 +4202,7 @@ function goMenu() {
   // Clean up any active MP session
   if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
   mpConns = []; mpIsHost = false; mpRoomCode = ''; mpPlayers = [];
-  document.getElementById('mp-room-created').style.display = 'none';
+  const _mrc = document.getElementById('mp-room-created'); if (_mrc) _mrc.style.display = 'none';
   document.getElementById('mp-join-status').textContent = '';
   const chatBtn = document.getElementById('tab-chat-btn');
   if (chatBtn) chatBtn.style.display = 'none';
@@ -6324,6 +6326,7 @@ function openLobby(asHost) {
 function leaveLobby() {
   if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
   mpConns = []; mpIsHost = false; mpRoomCode = ''; mpPlayers = [];
+  try { history.replaceState(null, '', window.location.pathname); } catch(e){}
   document.getElementById('screen-lobby').classList.remove('active');
   // Clear lobby chat
   const log = document.getElementById('lobby-chat-log');
@@ -6464,6 +6467,17 @@ function showMultiplayer() {
   if (guestLobby) guestLobby.style.display = 'none';
   const joinStatus = document.getElementById('mp-join-status');
   if (joinStatus) joinStatus.textContent = '';
+  // Auto-join from URL hash (e.g. page.html#join=ABC123)
+  try {
+    const hash = window.location.hash;
+    const m = hash.match(/[#&]join=([A-Z0-9]{6})/i);
+    if (m) {
+      const inp = document.getElementById('mp-join-code');
+      if (inp) inp.value = m[1].toUpperCase();
+      history.replaceState(null, '', window.location.pathname); // clear hash
+      setTimeout(() => joinRoom(), 400); // give screen time to render
+    }
+  } catch(e) {}
   // Populate map selector
   const mapSel = document.getElementById('mp-map-select');
   if (mapSel && mapSel.options.length === 0) {
@@ -6519,6 +6533,8 @@ function createRoom() {
 
     mpPeer.on('open', id => {
       openLobby(true);
+      // Put room code in URL hash so host can share the link
+      try { history.replaceState(null, '', '#join=' + code); } catch(e){}
       if (mpVisibility === 'public') {
         registerPublicRoom(code);
         PLAYER.publicHosted = (PLAYER.publicHosted||0) + 1;
@@ -6590,48 +6606,77 @@ function joinRoom() {
   const code = (document.getElementById('mp-join-code')?.value || '').trim().toUpperCase();
   if (code.length !== 6) { toast('❌ Enter a 6-character room code'); return; }
 
-  if (mpPeer) { mpPeer.destroy(); mpPeer = null; }
+  if (mpPeer) { try { mpPeer.destroy(); } catch(e){} mpPeer = null; }
   mpIsHost = false;
   mpRoomCode = code;
   mpConns = [];
+  mpPlayers = [];
 
-  mpLog('⏳ Connecting…');
+  mpLog('⏳ Connecting to ' + code + '…');
 
   loadPeerJS(() => {
-    mpPeer = new Peer({ debug: 1 });
+    mpPeer = new Peer({ debug: 0 });
+
+    // Timeout if peer never opens
+    const openTimeout = setTimeout(() => {
+      if (!mpPeer || !mpPeer.open) {
+        mpLog('❌ Could not reach PeerJS server');
+        toast('❌ Connection timed out — check internet');
+        try { mpPeer.destroy(); } catch(e){} mpPeer = null;
+      }
+    }, 10000);
 
     mpPeer.on('open', myId => {
-      const conn = mpPeer.connect('wsroom-' + code, { reliable: true, serialization: 'json' });
+      clearTimeout(openTimeout);
+      mpLog('⏳ Reaching room ' + code + '…');
+
+      const conn = mpPeer.connect('wsroom-' + code, {
+        reliable: true,
+        serialization: 'json',
+        metadata: { name: getMPName() }
+      });
+
+      // Timeout if conn never opens (host not there)
+      const connTimeout = setTimeout(() => {
+        if (conn.open) return;
+        mpLog('❌ Room ' + code + ' not found or full');
+        toast('❌ Room ' + code + ' not found');
+        conn.close();
+      }, 8000);
 
       conn.on('open', () => {
-        // Introduce ourselves
+        clearTimeout(connTimeout);
         conn.send({ type: 'join', name: getMPName() });
         mpConns = [conn];
-        mpLog('✅ Joined! Opening lobby…');
+        mpLog('✅ Connected! Opening lobby…');
         openLobby(false);
 
         conn.on('data', data => handleMPData(data, conn));
 
         conn.on('close', () => {
           mpLog('❌ Host disconnected');
-          toast('❌ Disconnected from host');
-        });
-
-        conn.on('error', err => {
-          mpLog('❌ Connection error');
-          toast('❌ Connection error: ' + err.type);
+          toast('❌ Host disconnected');
+          // Return to MP screen if still in lobby
+          if (document.getElementById('screen-lobby').classList.contains('active')) {
+            leaveLobby();
+          }
         });
       });
 
-      conn.on('error', () => {
-        mpLog('❌ Room not found');
-        toast('❌ Room ' + code + ' not found');
+      conn.on('error', err => {
+        clearTimeout(connTimeout);
+        mpLog('❌ ' + (err.type || 'Connection failed'));
+        toast('❌ Could not connect: ' + (err.type || 'unknown error'));
       });
     });
 
     mpPeer.on('error', err => {
-      mpLog('❌ Error: ' + err.type);
-      toast('❌ ' + err.type);
+      clearTimeout(openTimeout);
+      const msg = err.type === 'peer-unavailable'
+        ? 'Room ' + code + ' not found'
+        : (err.type || 'Connection error');
+      mpLog('❌ ' + msg);
+      toast('❌ ' + msg);
     });
   });
 }
@@ -6936,7 +6981,7 @@ function refreshServerList() {
     const rooms = JSON.parse(localStorage.getItem(PUBLIC_ROOMS_KEY)||'[]')
       .filter(r => Date.now()-r.ts < 300000);
     if (!rooms.length) {
-      el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;letter-spacing:2px;padding:20px;">NO PUBLIC SERVERS FOUND</div>';
+      el.innerHTML = '<div style="text-align:center;color:var(--text3);font-family:Orbitron,monospace;font-size:9px;letter-spacing:2px;padding:12px 20px;">NO PUBLIC SERVERS<br><span style=\"font-size:8px;color:var(--text3);letter-spacing:1px;\">Public servers are visible to players on the same device/browser.<br>Share a link via 📋 COPY LINK in the lobby instead.</span></div>';
       return;
     }
     el.innerHTML = rooms.map(r => `
@@ -7236,6 +7281,20 @@ buildMapGrid();
 updateShardDisplays();
 startMenuParticles();
 refreshDailyBar();
+
+// Auto-join from URL hash on initial load (e.g. shared invite link)
+(function() {
+  try {
+    const m = window.location.hash.match(/[#&]join=([A-Z0-9]{6})/i);
+    if (m) {
+      // Open MP screen and trigger join
+      setTimeout(() => {
+        showMultiplayer();
+        // showMultiplayer will auto-detect the hash and join
+      }, 800);
+    }
+  } catch(e) {}
+})();
 
 </script>
 </body>
